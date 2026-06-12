@@ -1,6 +1,6 @@
 # Publicacao Vercel + Git - Bolao Copa 2026
 
-Atualizado em: 2026-06-12 19:23:01 -03
+Atualizado em: 2026-06-12 19:45:00 -03
 
 ## Objetivo
 
@@ -17,14 +17,14 @@ Preparar o projeto para publicacao controlada em Git e Vercel, mantendo gates ex
 
 ## Gate 2 - Repositorio remoto
 
-- [ ] Confirmar nome do repositorio GitHub.
-- [ ] Criar ou conectar remoto.
-- [ ] Fazer push do branch principal.
+- [x] Confirmar nome do repositorio GitHub.
+- [x] Criar ou conectar remoto.
+- [x] Fazer push do branch principal.
 
 ## Gate 3 - Vercel
 
-- [ ] Criar ou conectar projeto Vercel ao repositorio.
-- [ ] Configurar variaveis de ambiente:
+- [x] Criar ou conectar projeto Vercel ao repositorio.
+- [x] Configurar variaveis de ambiente:
   - `NEXT_PUBLIC_SUPABASE_URL`
   - `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
 - [ ] Configurar URL publica no Supabase Auth.
@@ -33,6 +33,8 @@ Preparar o projeto para publicacao controlada em Git e Vercel, mantendo gates ex
 
 ## Observacoes
 
+- GitHub: `MatheusNascimento79/BolaoCopa2026`.
+- Vercel: `matheusnascimento79s-projects/bolao-copa-2026`.
 - O frontend usa apenas chave publica/publishable do Supabase.
 - `service_role` ou secret key nao deve ser exposta em variaveis `NEXT_PUBLIC_`.
 - Deploy de producao depende de aprovacao explicita.
