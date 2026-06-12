@@ -11,9 +11,9 @@ Preparar o projeto para publicacao controlada em Git e Vercel, mantendo gates ex
 - [x] Remover segredos desnecessarios do template de ambiente.
 - [x] Validar lint local.
 - [x] Validar build local.
-- [ ] Inicializar repositorio Git local.
-- [ ] Criar primeiro commit local.
-- [ ] Confirmar que `.env.local`, `.next` e `node_modules` nao entram no Git.
+- [x] Inicializar repositorio Git local.
+- [x] Criar primeiro commit local.
+- [x] Confirmar que `.env.local`, `.next`, `.tmp` e `node_modules` nao entram no Git.
 
 ## Gate 2 - Repositorio remoto
 
