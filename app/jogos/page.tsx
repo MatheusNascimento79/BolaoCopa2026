@@ -44,27 +44,23 @@ export default async function JogosPage({ searchParams }: JogosPageProps) {
       <StageTabs tabs={stageTabs} activeId={activeStage} />
       <p className="live-phase-caption">{stageLabels[activeStage]}</p>
 
-      <GlassCard className="live-live-card" tone="green">
-        <div>
-          <StatusBadge tone={liveMatch ? "live" : "scheduled"} className={liveMatch ? "live-pulse-badge" : ""}>
-            {liveMatch ? "AO VIVO" : "Próximo jogo"}
-          </StatusBadge>
-          <strong>
-            {spotlightMatch
-              ? matchTeamsLabel(spotlightMatch.homeTeamId, spotlightMatch.awayTeamId, teamMap)
-              : "Sem jogos disponíveis"}
-          </strong>
-          <span>
-            {spotlightMatch ? `${formatMatchTime(spotlightMatch.kickoffAt)} · ${spotlightMatch.venue}` : "Aguardando dados oficiais"}
-          </span>
-        </div>
-      </GlassCard>
+      {spotlightMatch && (
+        <GlassCard className="live-live-card" tone="green">
+          <div>
+            <StatusBadge tone={liveMatch ? "live" : "scheduled"} className={liveMatch ? "live-pulse-badge" : ""}>
+              {liveMatch ? "AO VIVO" : "Próximo jogo"}
+            </StatusBadge>
+            <strong>{matchTeamsLabel(spotlightMatch.homeTeamId, spotlightMatch.awayTeamId, teamMap)}</strong>
+            <span>{`${formatMatchTime(spotlightMatch.kickoffAt)} · ${spotlightMatch.venue}`}</span>
+          </div>
+        </GlassCard>
+      )}
 
       <section className="live-stack" aria-label={`Jogos - ${stageLabels[activeStage]}`}>
         {visibleMatches.length === 0 && (
           <GlassCard className="live-empty-state" tone="blue">
-            <strong>Jogos ainda não disponíveis</strong>
-            <p>Aguardando dados oficiais salvos pelo Super Admin.</p>
+            <strong>Nenhum jogo nesta fase</strong>
+            <p>Assim que a tabela for atualizada, os jogos aparecem aqui.</p>
           </GlassCard>
         )}
 

@@ -1442,15 +1442,26 @@ input {
 }
 
 .live-match-card {
-  min-height: 220px;
+  min-height: auto;
   padding: 18px;
 }
 
 .live-match-teams {
   grid-template-columns: minmax(0, 1fr) minmax(82px, auto) minmax(0, 1fr);
+  align-items: center;
 }
 
-.live-flag-orb {
+.live-team-left {
+  justify-items: start;
+  text-align: left;
+}
+
+.live-team-right {
+  justify-items: end;
+  text-align: right;
+}
+
+.live-match-card .live-flag-orb {
   width: 70px;
   height: 56px;
   border-width: 1px;
@@ -1458,7 +1469,6 @@ input {
   background:
     radial-gradient(circle at 35% 25%, rgba(255, 255, 255, 0.88), rgba(255, 255, 255, 0.22) 42%),
     linear-gradient(160deg, rgba(255, 255, 255, 0.24), rgba(45, 124, 255, 0.38));
-  font-size: 1.55rem;
 }
 
 .live-versus strong {
