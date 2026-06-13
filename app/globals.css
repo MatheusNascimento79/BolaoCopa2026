@@ -833,11 +833,11 @@ input {
   left: 0;
   z-index: 20;
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(6, 1fr);
   gap: 4px;
   width: min(100%, 440px);
   margin: 0 auto;
-  padding: 14px 18px calc(18px + env(safe-area-inset-bottom));
+  padding: 12px 12px calc(16px + env(safe-area-inset-bottom));
   border: 1px solid rgba(255, 255, 255, 0.14);
   border-bottom: 0;
   border-radius: 28px 28px 0 0;
@@ -852,7 +852,7 @@ input {
   gap: 6px;
   min-width: 0;
   color: rgba(255, 255, 255, 0.62);
-  font-size: 0.78rem;
+  font-size: 0.68rem;
   font-weight: 800;
 }
 
@@ -863,8 +863,8 @@ input {
 .live-nav-icon {
   display: grid;
   place-items: center;
-  width: 40px;
-  height: 34px;
+  width: 36px;
+  height: 32px;
   border-radius: 16px;
 }
 
@@ -1897,7 +1897,7 @@ input {
 }
 
 .live-bottom-nav {
-  padding: 14px 18px calc(18px + env(safe-area-inset-bottom));
+  padding: 12px 12px calc(16px + env(safe-area-inset-bottom));
   border-color: rgba(255, 255, 255, 0.15);
   border-radius: 30px 30px 0 0;
   background: rgba(1, 4, 19, 0.96);
@@ -2142,11 +2142,15 @@ input {
   padding: 12px;
 }
 
-.live-team-wide-card button {
+.live-team-wide-card button,
+.live-team-wide-head {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
   gap: 12px;
+}
+
+.live-team-wide-card button {
   width: 100%;
   border: 0;
   background: transparent;
@@ -2177,6 +2181,73 @@ input {
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 7px;
   margin-top: 12px;
+}
+
+.live-participants-list {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: participant;
+}
+
+.live-participants-list li {
+  counter-increment: participant;
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  border-radius: 18px;
+  padding: 13px 14px;
+  background:
+    linear-gradient(134deg, rgba(255, 255, 255, 0.11), rgba(255, 255, 255, 0.035) 54%),
+    rgba(5, 16, 45, 0.72);
+}
+
+.live-participants-list li::before {
+  content: counter(participant) ".";
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 999px;
+  background: rgba(255, 215, 95, 0.18);
+  color: var(--gold);
+  font-weight: var(--weight-strong);
+}
+
+.live-participants-list span {
+  overflow: hidden;
+  color: #fff;
+  font-size: var(--type-t2);
+  font-weight: var(--weight-strong);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.live-participants-list strong {
+  border-radius: 999px;
+  padding: 7px 10px;
+  font-size: 0.74rem;
+  font-weight: var(--weight-label);
+  white-space: nowrap;
+}
+
+.live-participant-bet-ok {
+  background: rgba(21, 200, 109, 0.16);
+  color: #76f5ad;
+}
+
+.live-participant-bet-missing {
+  background: rgba(255, 215, 95, 0.13);
+  color: var(--gold);
+}
+
+.live-match-date-group {
+  display: grid;
+  gap: 10px;
 }
 
 .live-expanded-stats span {
@@ -2651,7 +2722,8 @@ input {
   grid-template-columns: 82px minmax(0, 1fr) auto;
 }
 
-.live-team-wide-card button {
+.live-team-wide-card button,
+.live-team-wide-head {
   grid-template-columns: 64px minmax(0, 1fr) auto;
 }
 
@@ -2692,19 +2764,19 @@ input {
 }
 
 .live-bottom-nav {
-  padding: 13px 18px calc(16px + env(safe-area-inset-bottom));
+  padding: 12px 12px calc(16px + env(safe-area-inset-bottom));
   border-radius: 28px 28px 0 0;
 }
 
 .live-bottom-nav a {
   gap: 4px;
   color: rgba(255, 255, 255, 0.66);
-  font-size: 0.76rem;
+  font-size: 0.68rem;
 }
 
 .live-nav-icon {
-  width: 44px;
-  height: 38px;
+  width: 36px;
+  height: 32px;
 }
 
 .live-bottom-nav a[aria-current="page"] .live-nav-icon {

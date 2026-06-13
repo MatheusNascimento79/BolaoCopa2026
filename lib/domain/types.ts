@@ -135,3 +135,9 @@ export type PaymentSummary = {
   totalRaisedCents: number;
   receipts: PaymentReceipt[];
 };
+
+export type ParticipantStatus = {
+  userId: string;
+  nickname: string;
+  hasBet: boolean;
+};

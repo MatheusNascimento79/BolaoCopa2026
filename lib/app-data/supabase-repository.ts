@@ -4,6 +4,7 @@ import type {
   AppSettingsAuditEntry,
   Bet,
   Match,
+  ParticipantStatus,
   PaymentReceipt,
   PaymentStatus,
   Profile,
@@ -92,6 +93,12 @@ type PaymentSummaryRow = {
   pending: number;
   rejected: number;
   total_raised_cents: number;
+};
+
+type ParticipantStatusRow = {
+  user_id: string;
+  nickname: string;
+  has_bet: boolean;
 };
 
 type AuditRow = {
@@ -247,6 +254,19 @@ export async function listMatches() {
 
   if (error) return [];
   return ((data ?? []) as MatchRow[]).map(matchFromRow);
+}
+
+export async function listParticipantStatuses(): Promise<ParticipantStatus[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("get_participant_statuses");
+
+  if (error || !Array.isArray(data)) return [];
+
+  return (data as ParticipantStatusRow[]).map((row) => ({
+    userId: row.user_id,
+    nickname: row.nickname,
+    hasBet: row.has_bet,
+  }));
 }
 
 export async function listPaymentReceipts() {

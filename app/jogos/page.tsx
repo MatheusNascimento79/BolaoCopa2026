@@ -1,8 +1,8 @@
-import { AppFrame, GlassCard, LiveBottomNav, MatchCard, StageTabs, StatusBadge } from "@/components/live-ui";
 import { requireAppAccess } from "@/lib/access/profile";
 import { listMatches, listTeams } from "@/lib/app-data";
-import type { Match, Team, TournamentStage } from "@/lib/domain/types";
-import { stageLabels, stageOrder } from "@/lib/worldcup/stages";
+import type { TournamentStage } from "@/lib/domain/types";
+import { stageOrder } from "@/lib/worldcup/stages";
+import { JogosClient } from "./jogos-client";
 
 const validStages = new Set<TournamentStage>(stageOrder);
 
@@ -20,110 +20,14 @@ export default async function JogosPage({ searchParams }: JogosPageProps) {
     listTeams(),
     searchParams,
   ]);
-  const teamMap = new Map(teams.map((team) => [team.id, team]));
-  const matchesByStage = groupMatchesByStage(matches);
-  const stageTabs = stageOrder.map((stage) => ({
-    id: stage,
-    label: stage === "fase_de_grupos" ? "Grupos" : stageLabels[stage],
-    count: matchesByStage[stage].length,
-    href: `/jogos?fase=${stage}`,
-  }));
   const requestedStage = params?.fase as TournamentStage | undefined;
   const activeStage = requestedStage && validStages.has(requestedStage) ? requestedStage : "fase_de_grupos";
-  const visibleMatches = matchesByStage[activeStage] ?? [];
-  const liveMatch = matches.find((match) => match.status === "ao_vivo") ?? null;
-  const spotlightMatch = liveMatch ?? matches.find((match) => match.status === "agendado") ?? matches[0];
 
   return (
-    <AppFrame
-      eyebrow="Tabela"
-      title="Jogos"
-      action={<SpotlightBadge live={Boolean(liveMatch)} />}
-      nav={<LiveBottomNav current="/jogos" />}
-    >
-      <StageTabs tabs={stageTabs} activeId={activeStage} />
-      <p className="live-phase-caption">{stageLabels[activeStage]}</p>
-
-      {spotlightMatch && (
-        <GlassCard className="live-live-card" tone="green">
-          <div>
-            <StatusBadge tone={liveMatch ? "live" : "scheduled"} className={liveMatch ? "live-pulse-badge" : ""}>
-              {liveMatch ? "AO VIVO" : "Próximo jogo"}
-            </StatusBadge>
-            <strong>{matchTeamsLabel(spotlightMatch.homeTeamId, spotlightMatch.awayTeamId, teamMap)}</strong>
-            <span>{`${formatMatchTime(spotlightMatch.kickoffAt)} · ${spotlightMatch.venue}`}</span>
-          </div>
-        </GlassCard>
-      )}
-
-      <section className="live-stack" aria-label={`Jogos - ${stageLabels[activeStage]}`}>
-        {visibleMatches.length === 0 && (
-          <GlassCard className="live-empty-state" tone="blue">
-            <strong>Nenhum jogo nesta fase</strong>
-            <p>Assim que a tabela for atualizada, os jogos aparecem aqui.</p>
-          </GlassCard>
-        )}
-
-        {visibleMatches.map((match) => {
-          const homeTeam = teamMap.get(match.homeTeamId);
-          const awayTeam = teamMap.get(match.awayTeamId);
-
-          return (
-            <MatchCard
-              key={match.id}
-              stage={stageLabels[match.stage]}
-              group={match.groupName}
-              kickoffLabel={formatMatchTime(match.kickoffAt)}
-              venue={`${match.venue} · ${match.city}`}
-              status={match.status === "encerrado" ? "done" : match.status === "ao_vivo" ? "live" : "scheduled"}
-              home={{
-                name: homeTeam?.name ?? "A definir",
-                flagSrc: homeTeam?.flagUrl,
-                score: match.homeScore ?? undefined,
-              }}
-              away={{
-                name: awayTeam?.name ?? "A definir",
-                flagSrc: awayTeam?.flagUrl,
-                score: match.awayScore ?? undefined,
-              }}
-            />
-          );
-        })}
-      </section>
-    </AppFrame>
+    <JogosClient
+      activeStage={activeStage}
+      initialMatches={matches}
+      initialTeams={teams}
+    />
   );
-}
-
-function groupMatchesByStage(matches: Match[]) {
-  return stageOrder.reduce(
-    (acc, stage) => {
-      acc[stage] = matches.filter((match) => match.stage === stage);
-      return acc;
-    },
-    {} as Record<TournamentStage, Match[]>,
-  );
-}
-
-function SpotlightBadge({ live }: { live: boolean }) {
-  return (
-    <StatusBadge tone={live ? "live" : "scheduled"} className={live ? "live-pulse-badge" : ""}>
-      {live ? "AO VIVO" : "Agenda"}
-    </StatusBadge>
-  );
-}
-
-function formatMatchTime(value: string) {
-  return new Intl.DateTimeFormat("pt-BR", {
-    day: "2-digit",
-    month: "short",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(new Date(value));
-}
-
-function matchTeamsLabel(homeTeamId: string, awayTeamId: string, teamMap: Map<string, Team>) {
-  const homeTeam = teamMap.get(homeTeamId);
-  const awayTeam = teamMap.get(awayTeamId);
-
-  return `${homeTeam?.name ?? "Time"} x ${awayTeam?.name ?? "Time"}`;
 }

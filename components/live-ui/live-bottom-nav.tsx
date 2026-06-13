@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Home, ReceiptText, Shield, Trophy, Volleyball, type LucideIcon } from "lucide-react";
+import { Home, ReceiptText, Shield, Trophy, UsersRound, Volleyball, type LucideIcon } from "lucide-react";
 
 export type LiveNavItem = {
   href: string;
@@ -11,6 +11,7 @@ const defaultItems: LiveNavItem[] = [
   { href: "/", label: "Início", icon: Home },
   { href: "/jogos", label: "Jogos", icon: Volleyball },
   { href: "/times", label: "Times", icon: Shield },
+  { href: "/participantes", label: "Participantes", icon: UsersRound },
   { href: "/aposta", label: "Aposta", icon: ReceiptText },
   { href: "/ranking", label: "Ranking", icon: Trophy },
 ];

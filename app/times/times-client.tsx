@@ -8,7 +8,6 @@ import type { Team } from "@/lib/domain/types";
 export function TimesClient({ teams }: { teams: Team[] }) {
   const [query, setQuery] = useState("");
   const [group, setGroup] = useState("Todos");
-  const [expanded, setExpanded] = useState(teams[0]?.id ?? "");
   const groups = useMemo(() => ["Todos", ...Array.from(new Set(teams.map((team) => team.groupName)))], [teams]);
   const filtered = teams.filter((team) => {
     const matchesQuery = team.name.toLowerCase().includes(query.toLowerCase());
@@ -53,31 +52,26 @@ export function TimesClient({ teams }: { teams: Team[] }) {
           </GlassCard>
         )}
 
-        {filtered.map((team) => {
-          const isOpen = expanded === team.id;
-          return (
-            <GlassCard className="live-team-wide-card" key={team.id}>
-              <button onClick={() => setExpanded(isOpen ? "" : team.id)} type="button">
-                <TeamFlag label={team.name} src={team.flagUrl} />
-                <span>
-                  <strong>{team.name}</strong>
-                  <small>{team.groupName} · {team.confederation}</small>
-                </span>
-                <StatusBadge tone={team.status === "eliminado" ? "locked" : "success"}>
-                  {team.status === "eliminado" ? "Eliminado" : "Ativo"}
-                </StatusBadge>
-              </button>
-              {isOpen && (
-                <div className="live-expanded-stats">
-                  <span>{team.stats.points} pts</span>
-                  <span>{team.stats.wins} vitórias</span>
-                  <span>{team.stats.goalDifference > 0 ? `+${team.stats.goalDifference}` : team.stats.goalDifference} SG</span>
-                  <span>FIFA #{team.fifaRanking}</span>
-                </div>
-              )}
-            </GlassCard>
-          );
-        })}
+        {filtered.map((team) => (
+          <GlassCard className="live-team-wide-card" key={team.id}>
+            <div className="live-team-wide-head">
+              <TeamFlag label={team.name} src={team.flagUrl} />
+              <span>
+                <strong>{team.name}</strong>
+                <small>{team.groupName} · {team.confederation}</small>
+              </span>
+              <StatusBadge tone={team.status === "eliminado" ? "locked" : "success"}>
+                {team.status === "eliminado" ? "Eliminado" : "Ativo"}
+              </StatusBadge>
+            </div>
+            <div className="live-expanded-stats">
+              <span>{team.stats.points} pts</span>
+              <span>{team.stats.wins} vitórias</span>
+              <span>{team.stats.goalDifference > 0 ? `+${team.stats.goalDifference}` : team.stats.goalDifference} SG</span>
+              <span>FIFA #{team.fifaRanking}</span>
+            </div>
+          </GlassCard>
+        ))}
       </section>
     </AppFrame>
   );
