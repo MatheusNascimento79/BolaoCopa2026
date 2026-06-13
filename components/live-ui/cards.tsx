@@ -46,7 +46,7 @@ export function MatchCard({
       <div className="live-match-teams">
         <TeamScore team={home} align="left" />
         <div className="live-versus">
-          <strong>{home.score ?? "-"} : {away.score ?? "-"}</strong>
+          <strong>{home.score ?? "-"} X {away.score ?? "-"}</strong>
           <span>{kickoffLabel}</span>
         </div>
         <TeamScore team={away} align="right" />

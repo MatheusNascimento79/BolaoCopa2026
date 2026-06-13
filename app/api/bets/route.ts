@@ -17,10 +17,10 @@ export async function POST(request: Request) {
 
   try {
     const supabase = await createClient();
-    const { data: claimsData } = await supabase.auth.getClaims();
-    const userId = claimsData?.claims?.sub;
+    const { data: userData, error: userError } = await supabase.auth.getUser();
+    const userId = userData.user?.id;
 
-    if (!userId) {
+    if (userError || !userId) {
       return NextResponse.json({ error: "unauthenticated" }, { status: 401 });
     }
 

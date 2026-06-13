@@ -6,6 +6,8 @@ import { JogosClient } from "./jogos-client";
 
 const validStages = new Set<TournamentStage>(stageOrder);
 
+export const dynamic = "force-dynamic";
+
 type JogosPageProps = {
   searchParams?: Promise<{
     fase?: string;

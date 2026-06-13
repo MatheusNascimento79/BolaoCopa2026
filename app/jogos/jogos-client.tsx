@@ -1,9 +1,10 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { RefreshCw, Search } from "lucide-react";
 import { AppFrame, BettingStatusBar, GlassCard, LiveBottomNav, MatchCard, StageTabs, StatusBadge } from "@/components/live-ui";
 import type { Match, MatchStatus, Team, TournamentStage } from "@/lib/domain/types";
+import { createClient } from "@/lib/supabase/client";
 import { stageLabels, stageOrder } from "@/lib/worldcup/stages";
 
 const validStages = new Set<TournamentStage>(stageOrder);
@@ -38,8 +39,9 @@ export function JogosClient({ activeStage, betsDeadlineAt, betsOpen, initialMatc
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("todos");
   const [refreshing, setRefreshing] = useState(false);
   const [statusText, setStatusText] = useState("Tabela sincronizada.");
+  const displayMatches = useMemo(() => matches.map(withCurrentMatchStatus), [matches]);
   const teamMap = useMemo(() => new Map(teams.map((team) => [team.id, team])), [teams]);
-  const matchesByStage = useMemo(() => groupMatchesByStage(matches), [matches]);
+  const matchesByStage = useMemo(() => groupMatchesByStage(displayMatches), [displayMatches]);
   const stageTabs = stageOrder.map((stage) => ({
     id: stage,
     label: stage === "fase_de_grupos" ? "Grupos" : stageLabels[stage],
@@ -56,7 +58,7 @@ export function JogosClient({ activeStage, betsDeadlineAt, betsOpen, initialMatc
   const spotlightMatch = liveMatches[0] ?? visibleMatches.find((match) => match.status === "agendado") ?? visibleMatches[0] ?? null;
   const groupedMatches = groupMatchesByDate(visibleMatches);
 
-  async function refreshMatches() {
+  const refreshMatches = useCallback(async () => {
     setRefreshing(true);
     setStatusText("Atualizando jogos...");
 
@@ -73,7 +75,36 @@ export function JogosClient({ activeStage, betsDeadlineAt, betsOpen, initialMatc
     } finally {
       setRefreshing(false);
     }
-  }
+  }, []);
+
+  useEffect(() => {
+    setMatches(initialMatches);
+    setTeams(initialTeams);
+  }, [initialMatches, initialTeams]);
+
+  useEffect(() => {
+    const refreshOnFocus = () => void refreshMatches();
+    window.addEventListener("focus", refreshOnFocus);
+    document.addEventListener("visibilitychange", refreshOnFocus);
+
+    return () => {
+      window.removeEventListener("focus", refreshOnFocus);
+      document.removeEventListener("visibilitychange", refreshOnFocus);
+    };
+  }, [refreshMatches]);
+
+  useEffect(() => {
+    const supabase = createClient();
+    const channel = supabase
+      .channel("live-matches-teams")
+      .on("postgres_changes", { event: "*", schema: "public", table: "matches" }, () => void refreshMatches())
+      .on("postgres_changes", { event: "*", schema: "public", table: "teams" }, () => void refreshMatches())
+      .subscribe();
+
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [refreshMatches]);
 
   return (
     <AppFrame
@@ -210,6 +241,24 @@ function getMatchCardStatus(status: MatchStatus) {
   return status === "encerrado" ? "done" : status === "ao_vivo" ? "live" : "scheduled";
 }
 
+function withCurrentMatchStatus(match: Match) {
+  if (match.status !== "agendado") return match;
+
+  const kickoff = new Date(match.kickoffAt).getTime();
+  const now = Date.now();
+  const liveWindowMs = 2 * 60 * 60 * 1000;
+
+  if (now >= kickoff && now < kickoff + liveWindowMs) {
+    return { ...match, status: "ao_vivo" as MatchStatus };
+  }
+
+  if (now >= kickoff + liveWindowMs) {
+    return { ...match, status: "encerrado" as MatchStatus };
+  }
+
+  return match;
+}
+
 function groupMatchesByStage(matches: Match[]) {
   return stageOrder.reduce(
     (acc, stage) => {
@@ -244,6 +293,7 @@ function formatMatchDate(value: string) {
   return new Intl.DateTimeFormat("pt-BR", {
     day: "2-digit",
     month: "long",
+    timeZone: "America/Sao_Paulo",
     weekday: "short",
   }).format(new Date(value));
 }
@@ -254,6 +304,8 @@ function formatMatchTime(value: string) {
     hour: "2-digit",
     minute: "2-digit",
     month: "short",
+    timeZone: "America/Sao_Paulo",
+    timeZoneName: "short",
   }).format(new Date(value));
 }
 
@@ -261,6 +313,7 @@ function formatTime(value: string) {
   return new Intl.DateTimeFormat("pt-BR", {
     hour: "2-digit",
     minute: "2-digit",
+    timeZone: "America/Sao_Paulo",
   }).format(new Date(value));
 }
 
@@ -268,5 +321,5 @@ function matchTeamsLabel(homeTeamId: string, awayTeamId: string, teamMap: Map<st
   const homeTeam = teamMap.get(homeTeamId);
   const awayTeam = teamMap.get(awayTeamId);
 
-  return `${homeTeam?.name ?? "Time"} x ${awayTeam?.name ?? "Time"}`;
+  return `${homeTeam?.name ?? "Time"} X ${awayTeam?.name ?? "Time"}`;
 }

@@ -2982,6 +2982,18 @@ input {
   font-size: var(--type-t2);
 }
 
+.live-modal-feedback {
+  margin: 0;
+}
+
+.live-success-message {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.86);
+  font-size: var(--type-t2);
+  line-height: 1.35;
+  text-align: center;
+}
+
 .live-loading-screen {
   display: grid;
   min-height: 100dvh;

@@ -1,21 +1,30 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { Search, ShieldCheck } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { RefreshCw, Search, ShieldCheck } from "lucide-react";
 import { AppFrame, BettingStatusBar, GlassCard, LiveBottomNav, StatusBadge, TeamFlag } from "@/components/live-ui";
 import type { Team } from "@/lib/domain/types";
+import { createClient } from "@/lib/supabase/client";
+
+type TeamsPayload = {
+  snapshotAt: string;
+  teams: Team[];
+};
 
 export function TimesClient({
   betsDeadlineAt,
   betsOpen,
-  teams,
+  teams: initialTeams,
 }: {
   betsDeadlineAt: string | null;
   betsOpen: boolean;
   teams: Team[];
 }) {
+  const [teams, setTeams] = useState(initialTeams);
   const [selectedTeamId, setSelectedTeamId] = useState("");
   const [group, setGroup] = useState("Todos");
+  const [refreshing, setRefreshing] = useState(false);
+  const [statusText, setStatusText] = useState("Dados sincronizados.");
   const groups = useMemo(() => ["Todos", ...Array.from(new Set(teams.map((team) => team.groupName)))], [teams]);
   const teamOptions = useMemo(() => sortTeamsByName(teams), [teams]);
   const filtered = teams.filter((team) => {
@@ -24,11 +33,59 @@ export function TimesClient({
     return matchesTeam && matchesGroup;
   });
 
+  const refreshTeams = useCallback(async () => {
+    setRefreshing(true);
+    setStatusText("Atualizando seleções...");
+
+    try {
+      const response = await fetch("/api/teams", { cache: "no-store" });
+      if (!response.ok) throw new Error("teams_refresh_failed");
+
+      const payload = (await response.json()) as TeamsPayload;
+      setTeams(payload.teams);
+      setStatusText(`Atualizado em ${formatTime(payload.snapshotAt)}.`);
+    } catch {
+      setStatusText("Não foi possível atualizar agora.");
+    } finally {
+      setRefreshing(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    setTeams(initialTeams);
+  }, [initialTeams]);
+
+  useEffect(() => {
+    const refreshOnFocus = () => void refreshTeams();
+    window.addEventListener("focus", refreshOnFocus);
+    document.addEventListener("visibilitychange", refreshOnFocus);
+
+    const supabase = createClient();
+    const channel = supabase
+      .channel("live-teams")
+      .on("postgres_changes", { event: "*", schema: "public", table: "teams" }, () => void refreshTeams())
+      .subscribe();
+
+    return () => {
+      window.removeEventListener("focus", refreshOnFocus);
+      document.removeEventListener("visibilitychange", refreshOnFocus);
+      void supabase.removeChannel(channel);
+    };
+  }, [refreshTeams]);
+
   return (
     <AppFrame
       eyebrow="Seleções"
       title="Times"
-      action={<StatusBadge tone="scheduled">{filtered.length} times</StatusBadge>}
+      action={
+        <div className="live-ranking-actions">
+          <StatusBadge tone="scheduled">{filtered.length} times</StatusBadge>
+          <button className="live-refresh-action" disabled={refreshing} onClick={() => void refreshTeams()} type="button">
+            <RefreshCw size={15} />
+            Atualizar
+          </button>
+        </div>
+      }
       bottomStatus={<BettingStatusBar betsDeadlineAt={betsDeadlineAt} betsOpen={betsOpen} />}
       nav={<LiveBottomNav current="/times" />}
     >
@@ -37,6 +94,7 @@ export function TimesClient({
         <div>
           <strong>Seleções da Copa</strong>
           <span>Busca, filtro por grupo e estatísticas das seleções.</span>
+          <small>{statusText}</small>
         </div>
       </GlassCard>
 
@@ -99,4 +157,12 @@ export function TimesClient({
 
 function sortTeamsByName(teamList: Team[]) {
   return [...teamList].sort((teamA, teamB) => teamA.name.localeCompare(teamB.name, "pt-BR"));
+}
+
+function formatTime(value: string) {
+  return new Intl.DateTimeFormat("pt-BR", {
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: "America/Sao_Paulo",
+  }).format(new Date(value));
 }

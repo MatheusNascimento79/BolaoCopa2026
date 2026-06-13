@@ -43,9 +43,11 @@ export function ApostaClient({ bet, betsDeadlineAt, betsOpen, teams }: ApostaCli
   const [openSlot, setOpenSlot] = useState<Slot | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [rulesOpen, setRulesOpen] = useState(false);
+  const [savedOpen, setSavedOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [feedback, setFeedback] = useState("");
   const hasTeams = teams.length > 0;
+  const teamOptions = useMemo(() => sortTeamsByName(teams), [teams]);
   const bettingStatus = getBettingStatusKind({ betsDeadlineAt, betsOpen });
   const editingBlocked = bettingStatus === "closed" && hasSavedBet;
   const mustConfirmAfterClose = bettingStatus === "closed" && !hasSavedBet;
@@ -77,6 +79,7 @@ export function ApostaClient({ bet, betsDeadlineAt, betsOpen, teams }: ApostaCli
       return;
     }
 
+    setFeedback("");
     setConfirmOpen(true);
   }
 
@@ -100,6 +103,7 @@ export function ApostaClient({ bet, betsDeadlineAt, betsOpen, teams }: ApostaCli
 
       setHasSavedBet(true);
       setConfirmOpen(false);
+      setSavedOpen(true);
       setFeedback(hasSavedBet ? "Aposta atualizada." : "Aposta feita.");
     } catch (error) {
       setFeedback(getSubmitErrorMessage(error));
@@ -291,6 +295,34 @@ export function ApostaClient({ bet, betsDeadlineAt, betsOpen, teams }: ApostaCli
             <button className="live-primary-action live-gold-action" disabled={saving} onClick={submitConfirmedBet} type="button">
               {saving ? "Salvando..." : hasSavedBet ? "Atualizar aposta" : "Salvar aposta"}
             </button>
+            {feedback && <p className="live-form-error live-modal-feedback">{feedback}</p>}
+          </GlassCard>
+        </div>
+      )}
+
+      {savedOpen && (
+        <div className="live-modal-backdrop" onClick={() => setSavedOpen(false)} role="presentation">
+          <GlassCard
+            aria-labelledby="saved-bet-title"
+            aria-modal="true"
+            className="live-team-modal live-confirm-modal"
+            onClick={(event) => event.stopPropagation()}
+            role="dialog"
+            tone="green"
+          >
+            <div className="live-modal-head">
+              <div>
+                <span className="live-section-label">Aposta</span>
+                <strong id="saved-bet-title">Aposta salva</strong>
+              </div>
+              <button aria-label="Fechar confirmação de aposta salva" onClick={() => setSavedOpen(false)} type="button">
+                <X size={20} />
+              </button>
+            </div>
+            <p className="live-success-message">Seu palpite foi registrado com sucesso.</p>
+            <button className="live-primary-action" onClick={() => setSavedOpen(false)} type="button">
+              OK
+            </button>
           </GlassCard>
         </div>
       )}
@@ -316,7 +348,7 @@ export function ApostaClient({ bet, betsDeadlineAt, betsOpen, teams }: ApostaCli
             </div>
 
             <div className="live-modal-team-list">
-              {teams.map((team) => {
+              {teamOptions.map((team) => {
                 const selectedElsewhere = Object.entries(picks).some(
                   ([slot, teamId]) => slot !== openSlot && teamId === team.id,
                 );
@@ -345,6 +377,10 @@ export function ApostaClient({ bet, betsDeadlineAt, betsOpen, teams }: ApostaCli
       )}
     </AppFrame>
   );
+}
+
+function sortTeamsByName(teamList: Team[]) {
+  return [...teamList].sort((teamA, teamB) => teamA.name.localeCompare(teamB.name, "pt-BR"));
 }
 
 function getSubmitErrorMessage(error: unknown) {
