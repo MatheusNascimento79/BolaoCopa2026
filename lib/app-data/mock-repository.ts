@@ -183,7 +183,7 @@ export function submitBet(input: SubmitBetInput): SubmitBetResult {
   }
 
   const validTeamIds = new Set(teams.map((team) => team.id));
-  const hasInvalidTeam = Array.from(uniquePicks).some((teamId) => !validTeamIds.has(teamId));
+  const hasInvalidTeam = Array.from(uniquePicks).some((teamId) => !validTeamIds.has(teamId) && !/^team-[a-z0-9-]+$/i.test(teamId));
   if (hasInvalidTeam) {
     throw new Error("team_not_found");
   }

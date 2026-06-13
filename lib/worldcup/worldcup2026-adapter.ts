@@ -93,8 +93,13 @@ export class WorldCup2026Adapter implements WorldCupAdapter {
   constructor(private readonly baseUrl = process.env.WORLDCUP2026_API_BASE_URL ?? defaultBaseUrl) {}
 
   async syncTeams() {
-    const payload = await this.fetchJson("/get/teams");
-    const data = asArray(payload).map((entry) => this.normalizeTeam(entry)).filter(Boolean) as Team[];
+    const [teamsPayload, matchesPayload] = await Promise.all([
+      this.fetchJson("/get/teams"),
+      this.fetchJson("/get/games").catch(() => null),
+    ]);
+    const teams = asArray(teamsPayload).map((entry) => this.normalizeTeam(entry)).filter(Boolean) as Team[];
+    const matches = asArray(matchesPayload).map((entry) => this.normalizeMatch(entry)).filter(Boolean) as Match[];
+    const data = this.applyMatchStats(teams, matches);
 
     return {
       data,
@@ -208,5 +213,49 @@ export class WorldCup2026Adapter implements WorldCupAdapter {
       awayScore: record.awayScore === null ? null : asNumber(record.away_score ?? record.awayScore ?? record.scoreB, 0),
       status: normalizeStatus(statusValue),
     };
+  }
+
+  private applyMatchStats(teams: Team[], matches: Match[]) {
+    const stats = new Map(teams.map((team) => [team.id, { ...team.stats }]));
+
+    matches
+      .filter((match) => match.status === "encerrado" && match.homeTeamId !== "team-0" && match.awayTeamId !== "team-0")
+      .forEach((match) => {
+        const homeStats = stats.get(match.homeTeamId);
+        const awayStats = stats.get(match.awayTeamId);
+        const homeScore = match.homeScore ?? 0;
+        const awayScore = match.awayScore ?? 0;
+
+        if (!homeStats || !awayStats) return;
+
+        homeStats.played += 1;
+        awayStats.played += 1;
+        homeStats.goalsFor += homeScore;
+        homeStats.goalsAgainst += awayScore;
+        awayStats.goalsFor += awayScore;
+        awayStats.goalsAgainst += homeScore;
+        homeStats.goalDifference = homeStats.goalsFor - homeStats.goalsAgainst;
+        awayStats.goalDifference = awayStats.goalsFor - awayStats.goalsAgainst;
+
+        if (homeScore > awayScore) {
+          homeStats.wins += 1;
+          homeStats.points += 3;
+          awayStats.losses += 1;
+        } else if (awayScore > homeScore) {
+          awayStats.wins += 1;
+          awayStats.points += 3;
+          homeStats.losses += 1;
+        } else {
+          homeStats.draws += 1;
+          awayStats.draws += 1;
+          homeStats.points += 1;
+          awayStats.points += 1;
+        }
+      });
+
+    return teams.map((team) => ({
+      ...team,
+      stats: stats.get(team.id) ?? team.stats,
+    }));
   }
 }
