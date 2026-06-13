@@ -39,28 +39,28 @@ export function ApostaClient({ bet, betsDeadlineAt, betsOpen, teams }: ApostaCli
     [bet],
   );
   const [picks, setPicks] = useState(initialPicks);
-  const [locked, setLocked] = useState(Boolean(bet?.locked));
+  const [hasSavedBet, setHasSavedBet] = useState(Boolean(bet?.locked));
   const [openSlot, setOpenSlot] = useState<Slot | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [rulesOpen, setRulesOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [feedback, setFeedback] = useState("");
-  const immutableBet = locked;
   const hasTeams = teams.length > 0;
   const bettingStatus = getBettingStatusKind({ betsDeadlineAt, betsOpen });
-  const mustConfirmAfterClose = bettingStatus === "closed" && !immutableBet;
+  const editingBlocked = bettingStatus === "closed" && hasSavedBet;
+  const mustConfirmAfterClose = bettingStatus === "closed" && !hasSavedBet;
 
   const duplicateIds = Object.values(picks).filter((teamId, index, all) => teamId && all.indexOf(teamId) !== index);
   const hasDuplicate = duplicateIds.length > 0;
   const hasMissingPick = Object.values(picks).some((teamId) => !teamId);
   const teamIds = useMemo(() => new Set(teams.map((team) => team.id)), [teams]);
   const hasInvalidPick = Object.values(picks).some((teamId) => teamId && !teamIds.has(teamId));
-  const canSubmit = hasTeams && !hasMissingPick && !hasDuplicate && !hasInvalidPick && !immutableBet && !saving;
+  const canSubmit = hasTeams && !hasMissingPick && !hasDuplicate && !hasInvalidPick && !editingBlocked && !saving;
 
   function updatePick(slot: Slot, teamId: string) {
-    setLocked(false);
     setPicks((current) => ({ ...current, [slot]: teamId }));
     setOpenSlot(null);
+    if (bettingStatus !== "closed") setFeedback("Revise e confirme para salvar sua alteração.");
   }
 
   function requestConfirmation() {
@@ -95,9 +95,9 @@ export function ApostaClient({ bet, betsDeadlineAt, betsOpen, teams }: ApostaCli
 
       if (!response.ok) throw new Error("bet_submit_failed");
 
-      setLocked(true);
+      setHasSavedBet(true);
       setConfirmOpen(false);
-      setFeedback("Aposta feita.");
+      setFeedback(hasSavedBet ? "Aposta atualizada." : "Aposta feita.");
     } catch {
       setFeedback("Não foi possível salvar a aposta agora.");
     } finally {
@@ -109,14 +109,20 @@ export function ApostaClient({ bet, betsDeadlineAt, betsOpen, teams }: ApostaCli
     <AppFrame
       eyebrow="Bolão Copa 2026"
       title="Aposta"
-      action={<StatusBadge tone={locked ? "locked" : hasDuplicate ? "warning" : "success"}>{locked ? "Travada" : "Editando"}</StatusBadge>}
+      action={
+        <StatusBadge tone={editingBlocked ? "locked" : hasDuplicate ? "warning" : "success"}>
+          {editingBlocked ? "Bloqueada" : hasSavedBet ? "Salva" : "Editando"}
+        </StatusBadge>
+      }
       bottomStatus={<BettingStatusBar betsDeadlineAt={betsDeadlineAt} betsOpen={betsOpen} />}
       nav={<LiveBottomNav current="/aposta" />}
     >
       <GlassCard className="live-bet-intro live-bet-lock-card" tone="gold">
         <strong>
-          {locked
-            ? "Aposta salva — não será possível editar"
+          {editingBlocked
+            ? "Aposta encerrada — edição bloqueada"
+            : hasSavedBet
+              ? "Aposta salva — você ainda pode editar"
             : !hasTeams
               ? "Seleções indisponíveis"
             : mustConfirmAfterClose
@@ -125,8 +131,10 @@ export function ApostaClient({ bet, betsDeadlineAt, betsOpen, teams }: ApostaCli
         </strong>
         <p>
           {feedback ||
-            (locked
-              ? "A regra do bolão permite apenas uma aposta confirmada por participante."
+            (editingBlocked
+              ? "O período de apostas foi encerrado. Se o Super Admin reabrir, a edição volta a ficar disponível."
+              : hasSavedBet
+                ? "Enquanto as apostas estiverem abertas, você pode alterar seu palpite quantas vezes quiser."
               : !hasTeams
                 ? "Aguardando o Super Admin carregar a lista oficial de seleções."
               : mustConfirmAfterClose
@@ -150,7 +158,7 @@ export function ApostaClient({ bet, betsDeadlineAt, betsOpen, teams }: ApostaCli
           return (
             <button
               className="live-pick-button"
-              disabled={locked}
+              disabled={editingBlocked}
               key={slot}
               onClick={() => setOpenSlot(slot)}
               type="button"
@@ -160,7 +168,7 @@ export function ApostaClient({ bet, betsDeadlineAt, betsOpen, teams }: ApostaCli
                 teamName={team?.name}
                 flagSrc={team?.flagUrl}
                 selected={Boolean(team)}
-                locked={locked}
+                locked={editingBlocked}
                 helper={duplicated ? "Escolha um time diferente para cada posição." : team?.groupName}
                 action={<Check size={20} />}
               />
@@ -171,16 +179,15 @@ export function ApostaClient({ bet, betsDeadlineAt, betsOpen, teams }: ApostaCli
 
       <div className="live-action-row">
         <button className="live-secondary-action" type="button" onClick={() => {
-          if (!immutableBet && hasTeams) {
-            setLocked(false);
+          if (!editingBlocked && hasTeams) {
             setOpenSlot("championTeamId");
           }
-        }} disabled={immutableBet || !hasTeams}>
+        }} disabled={editingBlocked || !hasTeams}>
           <RotateCcw size={18} />
-          {immutableBet ? "Aposta travada" : "Editar"}
+          {editingBlocked ? "Edição bloqueada" : "Editar"}
         </button>
         <button className="live-primary-action live-gold-action" type="button" disabled={!canSubmit} onClick={requestConfirmation}>
-          {saving ? "Salvando..." : "Confirmar aposta"}
+          {saving ? "Salvando..." : hasSavedBet ? "Atualizar aposta" : "Confirmar aposta"}
         </button>
       </div>
 
@@ -279,13 +286,13 @@ export function ApostaClient({ bet, betsDeadlineAt, betsOpen, teams }: ApostaCli
             </div>
 
             <button className="live-primary-action live-gold-action" disabled={saving} onClick={submitConfirmedBet} type="button">
-              {saving ? "Salvando..." : "Salvar aposta"}
+              {saving ? "Salvando..." : hasSavedBet ? "Atualizar aposta" : "Salvar aposta"}
             </button>
           </GlassCard>
         </div>
       )}
 
-      {openSlot && !locked && (
+      {openSlot && !editingBlocked && (
         <div className="live-modal-backdrop" onClick={() => setOpenSlot(null)} role="presentation">
           <GlassCard
             aria-labelledby="team-select-title"

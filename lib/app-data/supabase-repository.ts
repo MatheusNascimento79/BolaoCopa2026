@@ -11,6 +11,7 @@ import type {
   ReceiptStatus,
   Team,
 } from "@/lib/domain/types";
+import { isBetsDeadlineExpired } from "@/lib/betting/status";
 import type {
   BetsOpenResult,
   PaymentDecision,
@@ -492,7 +493,27 @@ export async function submitBet(input: SubmitBetInput): Promise<SubmitBetResult>
     .maybeSingle();
 
   if (existingBetError) throw new Error(existingBetError.message);
-  if (existingBet) throw new Error("bet_already_locked");
+  const settings = (await getSettings()).settings;
+
+  if (existingBet) {
+    if (isBetsDeadlineExpired(settings)) throw new Error("bets_closed");
+
+    const { data, error } = await supabase
+      .from("bets")
+      .update({
+        champion_team_id: input.championTeamId,
+        runner_up_team_id: input.runnerUpTeamId,
+        third_place_team_id: input.thirdPlaceTeamId,
+        submitted_at: new Date().toISOString(),
+      })
+      .eq("user_id", input.userId)
+      .select("id,user_id,champion_team_id,runner_up_team_id,third_place_team_id,submitted_at")
+      .single();
+
+    if (error || !data) throw new Error(error?.message ?? "bet_update_failed");
+
+    return { bet: betFromRow(data as BetRow) };
+  }
 
   const { data, error } = await supabase
     .from("bets")
