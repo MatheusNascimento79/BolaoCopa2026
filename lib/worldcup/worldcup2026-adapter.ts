@@ -1,4 +1,4 @@
-import type { Match, MatchStatus, Team, TournamentStage } from "@/lib/mock";
+import type { Confederation, Match, MatchStatus, Team, TournamentStage } from "@/lib/mock";
 import type { WorldCupAdapter, WorldCupStanding } from "./types";
 
 const defaultBaseUrl = "https://worldcup26.ir";
@@ -41,17 +41,20 @@ function slug(value: string) {
 
 function normalizeStage(value: unknown): TournamentStage {
   const text = asString(value).toLowerCase();
-  if (text.includes("final")) return "final";
-  if (text.includes("third") || text.includes("terceiro")) return "terceiro_lugar";
-  if (text.includes("semi")) return "semifinais";
-  if (text.includes("quarter") || text.includes("quarta")) return "quartas";
-  if (text.includes("16") || text.includes("oitava")) return "oitavas";
-  if (text.includes("32")) return "32_avos";
+  if (text === "final" || text.includes("final")) return "final";
+  if (text === "third" || text === "3rd" || text.includes("terceiro")) return "terceiro_lugar";
+  if (text === "sf" || text.includes("semi")) return "semifinais";
+  if (text === "qf" || text.includes("quarter") || text.includes("quarta")) return "quartas";
+  if (text === "r16" || text.includes("16") || text.includes("oitava")) return "oitavas";
+  if (text === "r32" || text.includes("32")) return "32_avos";
   return "fase_de_grupos";
 }
 
 function normalizeStatus(value: unknown): MatchStatus {
   const text = asString(value).toLowerCase();
+  if (text === "true" || text === "finished") return "encerrado";
+  if (text === "false" || text === "notstarted") return "agendado";
+  if (/^\d+$/.test(text)) return "ao_vivo";
   if (text.includes("live") || text.includes("ao vivo")) return "ao_vivo";
   if (text.includes("finished") || text.includes("ended") || text.includes("encerr")) return "encerrado";
   if (text.includes("postponed") || text.includes("adiad")) return "adiado";
@@ -61,6 +64,27 @@ function normalizeStatus(value: unknown): MatchStatus {
 
 function maybeFlagUrl(code: string) {
   return code.length === 2 ? `https://flagcdn.com/${code.toLowerCase()}.svg` : "https://flagcdn.com/un.svg";
+}
+
+function parseWorldCupDate(value: unknown) {
+  const text = asString(value);
+  const match = text.match(/^(\d{2})\/(\d{2})\/(\d{4})\s+(\d{2}):(\d{2})$/);
+
+  if (!match) return asString(value, new Date().toISOString());
+
+  const [, month, day, year, hour, minute] = match;
+  return new Date(`${year}-${month}-${day}T${hour}:${minute}:00-03:00`).toISOString();
+}
+
+function normalizeTeamId(value: unknown, fallback: string) {
+  return `team-${slug(asString(value, fallback))}`;
+}
+
+function normalizeConfederation(value: unknown): Confederation {
+  const text = asString(value).toUpperCase();
+  const allowed = new Set<Confederation>(["AFC", "CAF", "CONCACAF", "CONMEBOL", "OFC", "UEFA"]);
+
+  return allowed.has(text as Confederation) ? (text as Confederation) : "CONMEBOL";
 }
 
 export class WorldCup2026Adapter implements WorldCupAdapter {
@@ -129,19 +153,19 @@ export class WorldCup2026Adapter implements WorldCupAdapter {
 
   private normalizeTeam(value: unknown): Team | null {
     const record = asRecord(value);
-    const name = asString(record.name ?? record.team ?? record.country ?? record.title);
+    const name = asString(record.name_en ?? record.name ?? record.team ?? record.country ?? record.title);
     if (!name) return null;
 
-    const externalId = asString(record.code ?? record.fifaCode ?? record.iso2 ?? record.id, slug(name).slice(0, 3).toUpperCase()).toUpperCase();
+    const externalId = asString(record.fifa_code ?? record.code ?? record.fifaCode ?? record.iso2 ?? record.id, slug(name).slice(0, 3).toUpperCase()).toUpperCase();
     const iso2 = asString(record.iso2 ?? record.countryCode ?? record.code).slice(0, 2);
 
     return {
-      id: `team-${slug(externalId || name)}`,
+      id: normalizeTeamId(record.id, externalId || name),
       externalId,
       name,
       flagUrl: asString(record.flag ?? record.flagUrl, maybeFlagUrl(iso2)),
-      groupName: asString(record.group ?? record.groupName, "Grupo"),
-      confederation: "CONMEBOL",
+      groupName: asString(record.groups ?? record.group ?? record.groupName, "Grupo"),
+      confederation: normalizeConfederation(record.confederation),
       fifaRanking: asNumber(record.fifaRanking ?? record.ranking, 120),
       coach: asString(record.coach ?? record.manager, "A definir"),
       stats: {
@@ -161,24 +185,28 @@ export class WorldCup2026Adapter implements WorldCupAdapter {
   private normalizeMatch(value: unknown): Match | null {
     const record = asRecord(value);
     const externalId = asString(record.id ?? record._id ?? record.matchId);
-    const homeName = asString(record.homeTeam ?? record.home ?? record.teamA ?? record.home_team);
-    const awayName = asString(record.awayTeam ?? record.away ?? record.teamB ?? record.away_team);
+    const homeName = asString(record.home_team_name_en ?? record.homeTeam ?? record.home ?? record.teamA ?? record.home_team);
+    const awayName = asString(record.away_team_name_en ?? record.awayTeam ?? record.away ?? record.teamB ?? record.away_team);
 
     if (!externalId && !homeName && !awayName) return null;
+
+    const statusValue = record.finished === "TRUE" || record.finished === true
+      ? "finished"
+      : record.time_elapsed ?? record.status;
 
     return {
       id: `match-${slug(externalId || `${homeName}-${awayName}`)}`,
       externalId: externalId || slug(`${homeName}-${awayName}`),
-      stage: normalizeStage(record.stage ?? record.round ?? record.phase),
+      stage: normalizeStage(record.type ?? record.stage ?? record.round ?? record.phase),
       groupName: asString(record.group ?? record.groupName) || undefined,
-      kickoffAt: asString(record.date ?? record.kickoffAt ?? record.datetime, new Date().toISOString()),
+      kickoffAt: parseWorldCupDate(record.local_date ?? record.date ?? record.kickoffAt ?? record.datetime),
       venue: asString(record.stadium ?? record.venue, "A definir"),
       city: asString(record.city, "A definir"),
-      homeTeamId: `team-${slug(asString(record.homeTeamCode ?? record.homeCode, homeName))}`,
-      awayTeamId: `team-${slug(asString(record.awayTeamCode ?? record.awayCode, awayName))}`,
-      homeScore: record.homeScore === null ? null : asNumber(record.homeScore ?? record.scoreA, 0),
-      awayScore: record.awayScore === null ? null : asNumber(record.awayScore ?? record.scoreB, 0),
-      status: normalizeStatus(record.status),
+      homeTeamId: normalizeTeamId(record.home_team_id ?? record.homeTeamId ?? record.homeTeamCode ?? record.homeCode, homeName),
+      awayTeamId: normalizeTeamId(record.away_team_id ?? record.awayTeamId ?? record.awayTeamCode ?? record.awayCode, awayName),
+      homeScore: record.homeScore === null ? null : asNumber(record.home_score ?? record.homeScore ?? record.scoreA, 0),
+      awayScore: record.awayScore === null ? null : asNumber(record.away_score ?? record.awayScore ?? record.scoreB, 0),
+      status: normalizeStatus(statusValue),
     };
   }
 }
