@@ -2,10 +2,18 @@
 
 import { useMemo, useState } from "react";
 import { Search, ShieldCheck } from "lucide-react";
-import { AppFrame, GlassCard, LiveBottomNav, StatusBadge, TeamFlag } from "@/components/live-ui";
+import { AppFrame, BettingStatusBar, GlassCard, LiveBottomNav, StatusBadge, TeamFlag } from "@/components/live-ui";
 import type { Team } from "@/lib/domain/types";
 
-export function TimesClient({ teams }: { teams: Team[] }) {
+export function TimesClient({
+  betsDeadlineAt,
+  betsOpen,
+  teams,
+}: {
+  betsDeadlineAt: string | null;
+  betsOpen: boolean;
+  teams: Team[];
+}) {
   const [selectedTeamId, setSelectedTeamId] = useState("");
   const [group, setGroup] = useState("Todos");
   const groups = useMemo(() => ["Todos", ...Array.from(new Set(teams.map((team) => team.groupName)))], [teams]);
@@ -21,6 +29,7 @@ export function TimesClient({ teams }: { teams: Team[] }) {
       eyebrow="Seleções"
       title="Times"
       action={<StatusBadge tone="scheduled">{filtered.length} times</StatusBadge>}
+      bottomStatus={<BettingStatusBar betsDeadlineAt={betsDeadlineAt} betsOpen={betsOpen} />}
       nav={<LiveBottomNav current="/times" />}
     >
       <GlassCard className="live-team-summary" tone="green">

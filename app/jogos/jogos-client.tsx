@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { RefreshCw, Search } from "lucide-react";
-import { AppFrame, GlassCard, LiveBottomNav, MatchCard, StageTabs, StatusBadge } from "@/components/live-ui";
+import { AppFrame, BettingStatusBar, GlassCard, LiveBottomNav, MatchCard, StageTabs, StatusBadge } from "@/components/live-ui";
 import type { Match, MatchStatus, Team, TournamentStage } from "@/lib/domain/types";
 import { stageLabels, stageOrder } from "@/lib/worldcup/stages";
 
@@ -10,6 +10,8 @@ const validStages = new Set<TournamentStage>(stageOrder);
 
 type JogosClientProps = {
   activeStage: TournamentStage;
+  betsDeadlineAt: string | null;
+  betsOpen: boolean;
   initialMatches: Match[];
   initialTeams: Team[];
 };
@@ -29,7 +31,7 @@ const statusFilters: Array<{ label: string; value: StatusFilter }> = [
   { label: "Encerrados", value: "encerrado" },
 ];
 
-export function JogosClient({ activeStage, initialMatches, initialTeams }: JogosClientProps) {
+export function JogosClient({ activeStage, betsDeadlineAt, betsOpen, initialMatches, initialTeams }: JogosClientProps) {
   const [matches, setMatches] = useState(initialMatches);
   const [teams, setTeams] = useState(initialTeams);
   const [selectedTeamId, setSelectedTeamId] = useState("");
@@ -88,6 +90,7 @@ export function JogosClient({ activeStage, initialMatches, initialTeams }: Jogos
           </button>
         </div>
       }
+      bottomStatus={<BettingStatusBar betsDeadlineAt={betsDeadlineAt} betsOpen={betsOpen} />}
       nav={<LiveBottomNav current="/jogos" />}
     >
       <StageTabs tabs={stageTabs} activeId={activeStage} />

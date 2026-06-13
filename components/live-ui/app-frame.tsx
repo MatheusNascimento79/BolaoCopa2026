@@ -5,11 +5,12 @@ type AppFrameProps = {
   title?: string;
   eyebrow?: string;
   action?: ReactNode;
+  bottomStatus?: ReactNode;
   nav?: ReactNode;
   className?: string;
 };
 
-export function AppFrame({ children, title, eyebrow, action, nav, className = "" }: AppFrameProps) {
+export function AppFrame({ children, title, eyebrow, action, bottomStatus, nav, className = "" }: AppFrameProps) {
   return (
     <div className={`live-app-frame ${className}`.trim()}>
       <div className="live-app-field" aria-hidden="true" />
@@ -24,6 +25,7 @@ export function AppFrame({ children, title, eyebrow, action, nav, className = ""
           </header>
         )}
         <main className="live-app-content">{children}</main>
+        {bottomStatus}
         {nav}
       </PhoneShell>
     </div>

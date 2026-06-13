@@ -13,5 +13,5 @@ export default async function ApostaPage() {
     getSettings(),
   ]);
 
-  return <ApostaClient bet={currentBet} betsOpen={settings.betsOpen} teams={teams} />;
+  return <ApostaClient bet={currentBet} betsDeadlineAt={settings.betsDeadlineAt} betsOpen={settings.betsOpen} teams={teams} />;
 }

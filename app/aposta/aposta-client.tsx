@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { Check, Info, Lock, RotateCcw, X } from "lucide-react";
 import {
   AppFrame,
+  BettingStatusBar,
   GlassCard,
   LiveBottomNav,
   StatusBadge,
@@ -11,11 +12,13 @@ import {
   TeamPickCard,
 } from "@/components/live-ui";
 import type { Bet, Team } from "@/lib/domain/types";
+import { getBettingStatusKind } from "@/lib/betting/status";
 
 type Slot = "championTeamId" | "runnerUpTeamId" | "thirdPlaceTeamId";
 
 type ApostaClientProps = {
   bet: Bet | null;
+  betsDeadlineAt: string | null;
   betsOpen: boolean;
   teams: Team[];
 };
@@ -26,7 +29,7 @@ const slotLabels: Record<Slot, string> = {
   thirdPlaceTeamId: "Terceiro colocado",
 };
 
-export function ApostaClient({ bet, betsOpen, teams }: ApostaClientProps) {
+export function ApostaClient({ bet, betsDeadlineAt, betsOpen, teams }: ApostaClientProps) {
   const initialPicks = useMemo(
     () => ({
       championTeamId: bet?.championTeamId ?? "",
@@ -44,14 +47,15 @@ export function ApostaClient({ bet, betsOpen, teams }: ApostaClientProps) {
   const [feedback, setFeedback] = useState("");
   const immutableBet = locked;
   const hasTeams = teams.length > 0;
-  const blockedByClosedBets = !betsOpen && !immutableBet;
+  const bettingStatus = getBettingStatusKind({ betsDeadlineAt, betsOpen });
+  const mustConfirmAfterClose = bettingStatus === "closed" && !immutableBet;
 
   const duplicateIds = Object.values(picks).filter((teamId, index, all) => teamId && all.indexOf(teamId) !== index);
   const hasDuplicate = duplicateIds.length > 0;
   const hasMissingPick = Object.values(picks).some((teamId) => !teamId);
   const teamIds = useMemo(() => new Set(teams.map((team) => team.id)), [teams]);
   const hasInvalidPick = Object.values(picks).some((teamId) => teamId && !teamIds.has(teamId));
-  const canSubmit = hasTeams && !hasMissingPick && !hasDuplicate && !hasInvalidPick && !immutableBet && !blockedByClosedBets && !saving;
+  const canSubmit = hasTeams && !hasMissingPick && !hasDuplicate && !hasInvalidPick && !immutableBet && !saving;
 
   function updatePick(slot: Slot, teamId: string) {
     setLocked(false);
@@ -106,6 +110,7 @@ export function ApostaClient({ bet, betsOpen, teams }: ApostaClientProps) {
       eyebrow="Bolão Copa 2026"
       title="Aposta"
       action={<StatusBadge tone={locked ? "locked" : hasDuplicate ? "warning" : "success"}>{locked ? "Travada" : "Editando"}</StatusBadge>}
+      bottomStatus={<BettingStatusBar betsDeadlineAt={betsDeadlineAt} betsOpen={betsOpen} />}
       nav={<LiveBottomNav current="/aposta" />}
     >
       <GlassCard className="live-bet-intro live-bet-lock-card" tone="gold">
@@ -114,8 +119,8 @@ export function ApostaClient({ bet, betsOpen, teams }: ApostaClientProps) {
             ? "Aposta salva — não será possível editar"
             : !hasTeams
               ? "Seleções indisponíveis"
-            : blockedByClosedBets
-              ? "Palpites encerrados"
+            : mustConfirmAfterClose
+              ? "Apostas encerradas — confirme sua aposta"
               : "Escolha campeão, vice e terceiro lugar"}
         </strong>
         <p>
@@ -124,8 +129,8 @@ export function ApostaClient({ bet, betsOpen, teams }: ApostaClientProps) {
               ? "A regra do bolão permite apenas uma aposta confirmada por participante."
               : !hasTeams
                 ? "Aguardando o Super Admin carregar a lista oficial de seleções."
-              : blockedByClosedBets
-                ? "O Super Admin encerrou o envio de novas apostas."
+              : mustConfirmAfterClose
+                ? "Você precisa escolher os três times e confirmar sua aposta para liberar o restante do app."
                 : "Selecione times diferentes para cada posição antes de confirmar.")}
         </p>
       </GlassCard>
@@ -145,7 +150,7 @@ export function ApostaClient({ bet, betsOpen, teams }: ApostaClientProps) {
           return (
             <button
               className="live-pick-button"
-              disabled={locked || blockedByClosedBets}
+              disabled={locked}
               key={slot}
               onClick={() => setOpenSlot(slot)}
               type="button"
@@ -166,13 +171,13 @@ export function ApostaClient({ bet, betsOpen, teams }: ApostaClientProps) {
 
       <div className="live-action-row">
         <button className="live-secondary-action" type="button" onClick={() => {
-          if (!immutableBet && !blockedByClosedBets && hasTeams) {
+          if (!immutableBet && hasTeams) {
             setLocked(false);
             setOpenSlot("championTeamId");
           }
-        }} disabled={immutableBet || blockedByClosedBets || !hasTeams}>
+        }} disabled={immutableBet || !hasTeams}>
           <RotateCcw size={18} />
-          {immutableBet ? "Aposta travada" : blockedByClosedBets ? "Encerrado" : "Editar"}
+          {immutableBet ? "Aposta travada" : "Editar"}
         </button>
         <button className="live-primary-action live-gold-action" type="button" disabled={!canSubmit} onClick={requestConfirmation}>
           {saving ? "Salvando..." : "Confirmar aposta"}

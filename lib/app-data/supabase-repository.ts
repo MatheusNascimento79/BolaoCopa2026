@@ -18,6 +18,7 @@ import type {
   PaymentReceiptWithProfile,
   SubmitBetInput,
   SubmitBetResult,
+  UpdateBetsSettingsInput,
 } from "./types";
 
 type ProfileRow = {
@@ -108,6 +109,8 @@ type AuditRow = {
   metadata: {
     previous_open?: boolean;
     next_open?: boolean;
+    previous_deadline_at?: string | null;
+    next_deadline_at?: string | null;
   } | null;
   created_at: string;
 };
@@ -343,12 +346,13 @@ export async function getSettings(): Promise<BetsOpenResult> {
     supabase
       .from("admin_audit_logs")
       .select("id,actor_id,action,metadata,created_at")
-      .in("action", ["bets_opened", "bets_closed", "payment_approved", "payment_rejected"])
+      .in("action", ["bets_opened", "bets_closed", "bets_deadline_updated", "payment_approved", "payment_rejected"])
       .order("created_at", { ascending: false })
       .limit(12),
   ]);
   const value = (setting?.value ?? {}) as {
     open?: boolean;
+    betsDeadlineAt?: string | null;
     paymentAmountCents?: number;
     paymentLink?: string;
     paymentPixKey?: string;
@@ -357,6 +361,7 @@ export async function getSettings(): Promise<BetsOpenResult> {
   return {
     settings: {
       betsOpen: value.open === true,
+      betsDeadlineAt: typeof value.betsDeadlineAt === "string" ? value.betsDeadlineAt : null,
       registrationOpen: true,
       paymentAmountCents: typeof value.paymentAmountCents === "number" ? value.paymentAmountCents : 0,
       paymentLink: typeof value.paymentLink === "string" ? value.paymentLink : "",
@@ -369,11 +374,26 @@ export async function getSettings(): Promise<BetsOpenResult> {
 }
 
 export async function setBetsOpen(open: boolean, actorId?: string): Promise<BetsOpenResult> {
+  return setBetsSettings({ open }, actorId);
+}
+
+export async function setBetsSettings(input: UpdateBetsSettingsInput, actorId?: string): Promise<BetsOpenResult> {
   const supabase = await createClient();
   const { data: claimsData } = await supabase.auth.getClaims();
   const effectiveActorId = actorId ?? claimsData?.claims?.sub;
+  const { data: setting } = await supabase
+    .from("app_settings")
+    .select("value")
+    .eq("key", "bets_open")
+    .maybeSingle();
+  const currentValue = (setting?.value ?? {}) as Record<string, unknown>;
   const currentSettings = (await getSettings()).settings;
   const previousOpen = currentSettings.betsOpen;
+  const previousDeadlineAt = currentSettings.betsDeadlineAt;
+  const nextOpen = typeof input.open === "boolean" ? input.open : currentSettings.betsOpen;
+  const nextDeadlineAt = Object.prototype.hasOwnProperty.call(input, "betsDeadlineAt")
+    ? (input.betsDeadlineAt ?? null)
+    : currentSettings.betsDeadlineAt;
 
   if (!effectiveActorId) throw new Error("missing_actor");
 
@@ -383,24 +403,39 @@ export async function setBetsOpen(open: boolean, actorId?: string): Promise<Bets
       updated_by: effectiveActorId,
       updated_at: new Date().toISOString(),
       value: {
+        ...currentValue,
         paymentAmountCents: currentSettings.paymentAmountCents,
         paymentLink: currentSettings.paymentLink,
         paymentPixKey: currentSettings.paymentPixKey,
-        open,
+        betsDeadlineAt: nextDeadlineAt,
+        open: nextOpen,
       },
     })
     .eq("key", "bets_open");
 
   if (settingError) throw new Error(settingError.message);
 
-  await supabase.from("admin_audit_logs").insert({
-    action: open ? "bets_opened" : "bets_closed",
-    actor_id: effectiveActorId,
-    metadata: {
-      previous_open: previousOpen,
-      next_open: open,
-    },
-  });
+  if (typeof input.open === "boolean" && previousOpen !== nextOpen) {
+    await supabase.from("admin_audit_logs").insert({
+      action: nextOpen ? "bets_opened" : "bets_closed",
+      actor_id: effectiveActorId,
+      metadata: {
+        previous_open: previousOpen,
+        next_open: nextOpen,
+      },
+    });
+  }
+
+  if (Object.prototype.hasOwnProperty.call(input, "betsDeadlineAt") && previousDeadlineAt !== nextDeadlineAt) {
+    await supabase.from("admin_audit_logs").insert({
+      action: "bets_deadline_updated",
+      actor_id: effectiveActorId,
+      metadata: {
+        previous_deadline_at: previousDeadlineAt,
+        next_deadline_at: nextDeadlineAt,
+      },
+    });
+  }
 
   return getSettings();
 }
@@ -440,6 +475,24 @@ export async function submitBet(input: SubmitBetInput): Promise<SubmitBetResult>
 
   if (teamsError) throw new Error(teamsError.message);
   if (count !== 3) throw new Error("invalid_team_selection");
+
+  const { data: profile, error: profileError } = await supabase
+    .from("profiles")
+    .select("id,role,payment_status")
+    .eq("id", input.userId)
+    .maybeSingle();
+
+  if (profileError || !profile) throw new Error("profile_not_allowed");
+  if (profile.role !== "participant" || profile.payment_status !== "pago") throw new Error("payment_not_approved");
+
+  const { data: existingBet, error: existingBetError } = await supabase
+    .from("bets")
+    .select("id")
+    .eq("user_id", input.userId)
+    .maybeSingle();
+
+  if (existingBetError) throw new Error(existingBetError.message);
+  if (existingBet) throw new Error("bet_already_locked");
 
   const { data, error } = await supabase
     .from("bets")

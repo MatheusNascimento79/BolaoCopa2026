@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { Check } from "lucide-react";
-import { LiveBottomNav } from "@/components/live-ui";
+import { BettingStatusBar, LiveBottomNav } from "@/components/live-ui";
 
 const whatsappGroupUrl = "https://chat.whatsapp.com/F7mycs099hjFrz5Jn9uGq6?mode=gi_t";
 
@@ -22,7 +22,19 @@ function firstName(profile: HomeProfile | null) {
   return profile.nickname.split(" ")[0] || profile.fullName.split(" ")[0] || "Zé";
 }
 
-export function HomeClient({ hasBet, prizePoolCents, profile }: { hasBet: boolean; prizePoolCents: number; profile: HomeProfile }) {
+export function HomeClient({
+  betsDeadlineAt,
+  betsOpen,
+  hasBet,
+  prizePoolCents,
+  profile,
+}: {
+  betsDeadlineAt: string | null;
+  betsOpen: boolean;
+  hasBet: boolean;
+  prizePoolCents: number;
+  profile: HomeProfile;
+}) {
   return (
     <main className="live-home-frame">
       <div className="live-home-field" aria-hidden="true" />
@@ -75,6 +87,7 @@ export function HomeClient({ hasBet, prizePoolCents, profile }: { hasBet: boolea
           </p>
         </div>
 
+        <BettingStatusBar betsDeadlineAt={betsDeadlineAt} betsOpen={betsOpen} />
         <LiveBottomNav current="/" />
       </section>
     </main>

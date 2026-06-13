@@ -3180,6 +3180,39 @@ input {
   padding-right: 28px;
 }
 
+.live-betting-status {
+  position: fixed;
+  right: 16px;
+  bottom: calc(82px + env(safe-area-inset-bottom));
+  left: 16px;
+  z-index: 19;
+  width: min(calc(100% - 32px), 408px);
+  margin: 0 auto;
+  border: 1px solid rgba(255, 215, 95, 0.28);
+  border-radius: 999px;
+  padding: 8px 14px;
+  background: rgba(3, 7, 24, 0.86);
+  box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.28);
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 0.76rem;
+  font-weight: var(--weight-label);
+  line-height: 1.2;
+  text-align: center;
+  backdrop-filter: blur(18px);
+}
+
+.live-betting-status-open {
+  color: #c9ffe0;
+}
+
+.live-betting-status-closing {
+  color: #fff0b8;
+}
+
+.live-betting-status-closed {
+  color: #ffd1d9;
+}
+
 /* Final mobile polish for games/teams. Keep this at the end to win over older duplicated rules. */
 .live-games-filter {
   gap: 10px;
@@ -3340,4 +3373,12 @@ input {
     overscroll-behavior-y: none;
     touch-action: manipulation;
   }
+}
+
+.live-phone-shell {
+  padding-bottom: calc(154px + env(safe-area-inset-bottom));
+}
+
+.live-home-shell {
+  padding-bottom: calc(178px + env(safe-area-inset-bottom));
 }

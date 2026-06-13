@@ -1,11 +1,11 @@
-import { AppFrame, GlassCard, LiveBottomNav, StatusBadge } from "@/components/live-ui";
-import { requireAppAccess } from "@/lib/access/profile";
+import { AppFrame, BettingStatusBar, GlassCard, LiveBottomNav, StatusBadge } from "@/components/live-ui";
+import { requireAppAccessOrBettingGate } from "@/lib/access/betting-gate";
 import { listParticipantStatuses } from "@/lib/app-data";
 
 export const dynamic = "force-dynamic";
 
 export default async function ParticipantesPage() {
-  await requireAppAccess();
+  const { settings } = await requireAppAccessOrBettingGate();
 
   const participants = await listParticipantStatuses();
 
@@ -14,6 +14,7 @@ export default async function ParticipantesPage() {
       eyebrow="Bolão Copa 2026"
       title="Participantes"
       action={<StatusBadge tone="scheduled">{participants.length} participantes</StatusBadge>}
+      bottomStatus={<BettingStatusBar betsDeadlineAt={settings.betsDeadlineAt} betsOpen={settings.betsOpen} />}
       nav={<LiveBottomNav current="/participantes" />}
     >
       <section className="live-stack" aria-label="Lista de participantes">

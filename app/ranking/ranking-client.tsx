@@ -2,18 +2,20 @@
 
 import { useMemo, useState } from "react";
 import { ArrowDown, ArrowUp, Minus, RefreshCw, Trophy } from "lucide-react";
-import { AppFrame, GlassCard, LiveBottomNav, RankingRow, StatusBadge } from "@/components/live-ui";
+import { AppFrame, BettingStatusBar, GlassCard, LiveBottomNav, RankingRow, StatusBadge } from "@/components/live-ui";
 import type { RankingEntry } from "@/lib/domain/types";
 
 const trendByUserId: Record<string, "up" | "down" | "same"> = {};
 
 type RankingClientProps = {
   activeUserId: string;
+  betsDeadlineAt: string | null;
+  betsOpen: boolean;
   initialEntries: RankingEntry[];
   paidParticipants: number;
 };
 
-export function RankingClient({ activeUserId, initialEntries, paidParticipants }: RankingClientProps) {
+export function RankingClient({ activeUserId, betsDeadlineAt, betsOpen, initialEntries, paidParticipants }: RankingClientProps) {
   const [rankingEntries, setRankingEntries] = useState(initialEntries);
   const [lastUpdatedAt, setLastUpdatedAt] = useState(initialEntries[0]?.rankingSnapshotAt ?? new Date().toISOString());
   const [refreshing, setRefreshing] = useState(false);
@@ -75,6 +77,7 @@ export function RankingClient({ activeUserId, initialEntries, paidParticipants }
           </button>
         </div>
       }
+      bottomStatus={<BettingStatusBar betsDeadlineAt={betsDeadlineAt} betsOpen={betsOpen} />}
       nav={<LiveBottomNav current="/ranking" />}
     >
       <GlassCard className="live-podium-card" tone="gold">

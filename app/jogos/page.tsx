@@ -1,4 +1,4 @@
-import { requireAppAccess } from "@/lib/access/profile";
+import { requireAppAccessOrBettingGate } from "@/lib/access/betting-gate";
 import { listMatches, listTeams } from "@/lib/app-data";
 import type { TournamentStage } from "@/lib/domain/types";
 import { stageOrder } from "@/lib/worldcup/stages";
@@ -13,7 +13,7 @@ type JogosPageProps = {
 };
 
 export default async function JogosPage({ searchParams }: JogosPageProps) {
-  await requireAppAccess();
+  const { settings } = await requireAppAccessOrBettingGate();
 
   const [matches, teams, params] = await Promise.all([
     listMatches(),
@@ -26,6 +26,8 @@ export default async function JogosPage({ searchParams }: JogosPageProps) {
   return (
     <JogosClient
       activeStage={activeStage}
+      betsDeadlineAt={settings.betsDeadlineAt}
+      betsOpen={settings.betsOpen}
       initialMatches={matches}
       initialTeams={teams}
     />

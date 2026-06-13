@@ -22,6 +22,11 @@ export type BetsOpenResult = {
   settings: AppSettings;
 };
 
+export type UpdateBetsSettingsInput = {
+  betsDeadlineAt?: string | null;
+  open?: boolean;
+};
+
 export type SubmitBetInput = Pick<Bet, "championTeamId" | "runnerUpTeamId" | "thirdPlaceTeamId"> & {
   userId: string;
 };

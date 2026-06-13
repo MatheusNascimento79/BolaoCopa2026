@@ -21,6 +21,7 @@ export type Confederation = "AFC" | "CAF" | "CONCACAF" | "CONMEBOL" | "OFC" | "U
 
 export type AppSettings = {
   betsOpen: boolean;
+  betsDeadlineAt: string | null;
   registrationOpen: boolean;
   paymentAmountCents: number;
   paymentLink: string;
@@ -33,7 +34,7 @@ export type AppSettings = {
 export type AppSettingsAuditEntry = {
   id: string;
   actorId: string;
-  action: "bets_opened" | "bets_closed" | "payment_approved" | "payment_rejected";
+  action: "bets_opened" | "bets_closed" | "bets_deadline_updated" | "payment_approved" | "payment_rejected";
   previousOpen: boolean;
   nextOpen: boolean;
   createdAt: string;
