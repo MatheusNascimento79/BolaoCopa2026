@@ -2845,6 +2845,63 @@ input {
   font-size: var(--type-t3);
 }
 
+.live-payment-modal {
+  gap: 16px;
+}
+
+.live-payment-modal-content {
+  display: grid;
+  gap: 12px;
+}
+
+.live-payment-row {
+  display: grid;
+  gap: 7px;
+}
+
+.live-payment-row > span {
+  color: var(--gold);
+  font-size: var(--type-t3);
+  font-weight: var(--weight-label);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.live-payment-row > strong {
+  color: #fff;
+  font-size: var(--type-t1);
+  font-weight: var(--weight-title);
+}
+
+.live-pix-copy {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 22px;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 58px;
+  border: 1px solid rgba(255, 215, 95, 0.38);
+  border-radius: 18px;
+  padding: 11px 13px;
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.04)),
+    rgba(4, 12, 36, 0.82);
+  color: #fff;
+  text-align: left;
+}
+
+.live-pix-copy strong {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-size: 0.86rem;
+  font-weight: var(--weight-strong);
+  line-height: 1.25;
+}
+
+.live-pix-copy svg {
+  color: var(--gold);
+}
+
 .live-rules-modal {
   gap: 16px;
   grid-template-rows: auto minmax(0, 1fr);

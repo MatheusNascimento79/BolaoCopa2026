@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Check, CreditCard, FileUp, RotateCcw } from "lucide-react";
 import { AppFrame, GlassCard, StatusBadge } from "@/components/live-ui";
+import { PaymentPixButton } from "@/components/payment-pix-modal";
 import { createClient } from "@/lib/supabase/client";
 
 function formatCurrency(cents: number) {
@@ -20,10 +21,10 @@ function formatFileSize(bytes: number) {
 
 export function UploadPagamentoClient({
   paymentAmountCents,
-  paymentLink,
+  paymentPixKey,
 }: {
   paymentAmountCents: number;
-  paymentLink: string;
+  paymentPixKey: string;
 }) {
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -108,13 +109,7 @@ export function UploadPagamentoClient({
         <div className="live-copy-stack">
           <strong>Pagamento NuBank</strong>
           <p>Envie o comprovante Pix para validação manual do Super Admin.</p>
-          {paymentLink ? (
-            <a className="live-primary-action" href={paymentLink} rel="noreferrer" target="_blank">
-              Pagar agora
-            </a>
-          ) : (
-            <p className="live-form-note">Link de pagamento ainda não configurado.</p>
-          )}
+          <PaymentPixButton amountLabel={formatCurrency(paymentAmountCents)} pixKey={paymentPixKey} />
         </div>
       </GlassCard>
 

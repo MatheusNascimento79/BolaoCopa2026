@@ -24,6 +24,7 @@ export type AppSettings = {
   registrationOpen: boolean;
   paymentAmountCents: number;
   paymentLink: string;
+  paymentPixKey: string;
   updatedBy: string;
   updatedAt: string;
   auditTrail: AppSettingsAuditEntry[];

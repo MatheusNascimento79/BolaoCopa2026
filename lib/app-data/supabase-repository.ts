@@ -260,7 +260,12 @@ export async function getSettings(): Promise<BetsOpenResult> {
       .order("created_at", { ascending: false })
       .limit(12),
   ]);
-  const value = (setting?.value ?? {}) as { open?: boolean; paymentAmountCents?: number; paymentLink?: string };
+  const value = (setting?.value ?? {}) as {
+    open?: boolean;
+    paymentAmountCents?: number;
+    paymentLink?: string;
+    paymentPixKey?: string;
+  };
 
   return {
     settings: {
@@ -268,6 +273,7 @@ export async function getSettings(): Promise<BetsOpenResult> {
       registrationOpen: true,
       paymentAmountCents: typeof value.paymentAmountCents === "number" ? value.paymentAmountCents : 0,
       paymentLink: typeof value.paymentLink === "string" ? value.paymentLink : "",
+      paymentPixKey: typeof value.paymentPixKey === "string" ? value.paymentPixKey : "",
       updatedBy: "supabase",
       updatedAt: new Date().toISOString(),
       auditTrail: ((auditRows ?? []) as AuditRow[]).map(auditFromRow),

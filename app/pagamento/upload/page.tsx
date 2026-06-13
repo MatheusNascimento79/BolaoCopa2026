@@ -6,5 +6,5 @@ export default async function UploadPagamentoPage() {
   await requirePaymentUploadAccess();
   const { settings } = await getSettings();
 
-  return <UploadPagamentoClient paymentAmountCents={settings.paymentAmountCents} paymentLink={settings.paymentLink} />;
+  return <UploadPagamentoClient paymentAmountCents={settings.paymentAmountCents} paymentPixKey={settings.paymentPixKey} />;
 }

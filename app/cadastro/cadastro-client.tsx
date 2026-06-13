@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
 import { Check, CreditCard, FileUp, UserRound } from "lucide-react";
 import { AppFrame, GlassCard, StatusBadge } from "@/components/live-ui";
+import { PaymentPixButton } from "@/components/payment-pix-modal";
 import { createClient } from "@/lib/supabase/client";
 
 const steps = [
@@ -51,10 +52,10 @@ function getSignupErrorMessage(error?: SignupError | null) {
 
 export function CadastroClient({
   paymentAmountCents,
-  paymentLink,
+  paymentPixKey,
 }: {
   paymentAmountCents: number;
-  paymentLink: string;
+  paymentPixKey: string;
 }) {
   const router = useRouter();
   const [step, setStep] = useState(0);
@@ -230,13 +231,7 @@ export function CadastroClient({
           <div className="live-copy-stack">
             <strong>Pagamento NuBank</strong>
             <p>O valor é fixo e o acesso só será liberado após validação manual do Super Admin.</p>
-            {paymentLink ? (
-              <a className="live-primary-action" href={paymentLink} rel="noreferrer" target="_blank">
-                Pagar agora
-              </a>
-            ) : (
-              <p className="live-form-note">Link de pagamento ainda não configurado.</p>
-            )}
+            <PaymentPixButton amountLabel={formatCurrency(paymentAmountCents)} pixKey={paymentPixKey} />
           </div>
         )}
 

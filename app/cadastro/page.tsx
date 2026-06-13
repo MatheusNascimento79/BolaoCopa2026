@@ -6,5 +6,5 @@ export const dynamic = "force-dynamic";
 export default async function CadastroPage() {
   const { settings } = await getSettings();
 
-  return <CadastroClient paymentAmountCents={settings.paymentAmountCents} paymentLink={settings.paymentLink} />;
+  return <CadastroClient paymentAmountCents={settings.paymentAmountCents} paymentPixKey={settings.paymentPixKey} />;
 }
