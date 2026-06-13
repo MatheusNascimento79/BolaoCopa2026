@@ -1,4 +1,4 @@
-import type { Match, Team } from "@/lib/mock";
+import type { Match, Team } from "@/lib/domain/types";
 
 export type WorldCupStanding = {
   teamId: string;

@@ -1,4 +1,4 @@
-import type { Confederation, Match, MatchStatus, Team, TournamentStage } from "@/lib/mock";
+import type { Confederation, Match, MatchStatus, Team, TournamentStage } from "@/lib/domain/types";
 import type { WorldCupAdapter, WorldCupStanding } from "./types";
 
 const defaultBaseUrl = "https://worldcup26.ir";

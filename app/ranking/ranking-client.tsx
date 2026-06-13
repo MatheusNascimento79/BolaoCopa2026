@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { ArrowDown, ArrowUp, Minus, RefreshCw, Trophy } from "lucide-react";
 import { AppFrame, GlassCard, LiveBottomNav, RankingRow, StatusBadge } from "@/components/live-ui";
-import type { RankingEntry } from "@/lib/mock";
+import type { RankingEntry } from "@/lib/domain/types";
 
 const trendByUserId: Record<string, "up" | "down" | "same"> = {};
 
@@ -87,13 +87,20 @@ export function RankingClient({ activeUserId, initialEntries, paidParticipants }
         </div>
 
         <div className="live-podium" aria-label="Pódio do ranking">
-          {podium.map((entry) => (
-            <div className={`live-podium-place live-podium-${entry.position}`} key={entry.id}>
-              <strong>{entry.position}º</strong>
-              <span>{entry.nickname}</span>
-              <small>{formatProbability(entry.probabilityScore)}</small>
+          {podium.length > 0 ? (
+            podium.map((entry) => (
+              <div className={`live-podium-place live-podium-${entry.position}`} key={entry.id}>
+                <strong>{entry.position}º</strong>
+                <span>{entry.nickname}</span>
+                <small>{formatProbability(entry.probabilityScore)}</small>
+              </div>
+            ))
+          ) : (
+            <div className="live-podium-empty">
+              <strong>Sem apostas</strong>
+              <span>O ranking aparece quando houver apostas confirmadas.</span>
             </div>
-          ))}
+          )}
         </div>
 
         <p className="live-ranking-sync">
@@ -107,22 +114,28 @@ export function RankingClient({ activeUserId, initialEntries, paidParticipants }
           <StatusBadge tone="scheduled">{rankingEntries.length} participantes</StatusBadge>
         </div>
 
-        {rankingWithMeta.map((entry) => (
-          <div className="live-ranking-item" key={entry.id}>
-            <RankingRow
-              position={entry.position}
-              nickname={entry.nickname}
-              probability={formatProbabilityNumber(entry.probabilityScore)}
-              prizeLabel={entry.prizeLabel}
-              tierLabel={entry.tied ? "Empatado" : prizeTierLabel(entry.expectedTier)}
-              active={entry.userId === activeUserId}
-            />
-            <div className="live-ranking-meta">
-              <span>{entry.reasoningSummary}</span>
-              <TrendBadge trend={entry.trend} />
+        {rankingWithMeta.length > 0 ? (
+          rankingWithMeta.map((entry) => (
+            <div className="live-ranking-item" key={entry.id}>
+              <RankingRow
+                position={entry.position}
+                nickname={entry.nickname}
+                probability={formatProbabilityNumber(entry.probabilityScore)}
+                prizeLabel={entry.prizeLabel}
+                tierLabel={entry.tied ? "Empatado" : prizeTierLabel(entry.expectedTier)}
+                active={entry.userId === activeUserId}
+              />
+              <div className="live-ranking-meta">
+                <span>{entry.reasoningSummary}</span>
+                <TrendBadge trend={entry.trend} />
+              </div>
             </div>
-          </div>
-        ))}
+          ))
+        ) : (
+          <GlassCard className="live-admin-feedback" tone="blue">
+            <span>Nenhuma aposta confirmada ainda.</span>
+          </GlassCard>
+        )}
       </section>
     </AppFrame>
   );

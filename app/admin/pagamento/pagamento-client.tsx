@@ -5,7 +5,7 @@ import Link from "next/link";
 import { ArrowLeft, Check, Eye, FileText, X } from "lucide-react";
 import { AppFrame, GlassCard, StatusBadge } from "@/components/live-ui";
 import type { PaymentDecisionResult, PaymentReceiptWithProfile } from "@/lib/app-data";
-import type { ReceiptStatus } from "@/lib/mock";
+import type { ReceiptStatus } from "@/lib/domain/types";
 
 type AdminPagamentoClientProps = {
   initialReceipts: PaymentReceiptWithProfile[];
@@ -63,7 +63,7 @@ export function AdminPagamentoClient({ initialReceipts, entryAmountCents }: Admi
     setPendingReceiptId(receiptId);
 
     try {
-      const response = await fetch(`/api/mock/payments/${receiptId}`, {
+      const response = await fetch(`/api/payments/${receiptId}`, {
         body: JSON.stringify({ actorId: "profile-admin", status }),
         headers: { "Content-Type": "application/json" },
         method: "PATCH",

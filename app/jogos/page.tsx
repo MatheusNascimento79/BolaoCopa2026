@@ -1,7 +1,8 @@
 import { AppFrame, GlassCard, LiveBottomNav, MatchCard, StageTabs, StatusBadge } from "@/components/live-ui";
 import { requireAppAccess } from "@/lib/access/profile";
-import { stageLabels, stageOrder, type Match, type Team, type TournamentStage } from "@/lib/mock";
+import type { Match, Team, TournamentStage } from "@/lib/domain/types";
 import { getWorldCupAdapter } from "@/lib/worldcup";
+import { stageLabels, stageOrder } from "@/lib/worldcup/stages";
 
 const validStages = new Set<TournamentStage>(stageOrder);
 
@@ -31,8 +32,8 @@ export default async function JogosPage({ searchParams }: JogosPageProps) {
 
   const adapter = getWorldCupAdapter();
   const [matchesResult, teamsResult, params] = await Promise.all([
-    adapter.syncMatches(),
-    adapter.syncTeams(),
+    adapter.syncMatches().catch(() => ({ data: [] as Match[], source: adapter.source, syncedAt: new Date().toISOString() })),
+    adapter.syncTeams().catch(() => ({ data: [] as Team[], source: adapter.source, syncedAt: new Date().toISOString() })),
     searchParams,
   ]);
   const matches = matchesResult.data;
@@ -69,10 +70,10 @@ export default async function JogosPage({ searchParams }: JogosPageProps) {
           <strong>
             {spotlightMatch
               ? matchTeamsLabel(spotlightMatch.homeTeamId, spotlightMatch.awayTeamId, teamMap)
-              : "Jogos em atualização"}
+              : "Sem jogos disponíveis"}
           </strong>
           <span>
-            {spotlightMatch ? `${formatMatchTime(spotlightMatch.kickoffAt)} · ${spotlightMatch.venue}` : "Base local sincronizada"}
+            {spotlightMatch ? `${formatMatchTime(spotlightMatch.kickoffAt)} · ${spotlightMatch.venue}` : "Aguardando dados oficiais"}
           </span>
         </div>
       </GlassCard>

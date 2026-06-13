@@ -2,16 +2,14 @@
 
 import { LogOut } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { clearMockSession } from "@/lib/mock/session";
 import { createClient } from "@/lib/supabase/client";
 
-export function MockLogoutLink() {
+export function LogoutLink() {
   const router = useRouter();
 
   async function handleLogout() {
     const supabase = createClient();
     await supabase.auth.signOut();
-    clearMockSession();
     router.refresh();
     router.replace("/auth");
   }

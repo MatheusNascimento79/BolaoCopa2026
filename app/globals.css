@@ -1751,6 +1751,32 @@ input {
   font-size: 1.32rem;
 }
 
+.live-podium-empty {
+  display: grid;
+  place-items: center;
+  gap: 6px;
+  min-height: 148px;
+  width: 100%;
+  border: 1px solid rgba(255, 215, 95, 0.28);
+  border-radius: 18px;
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.11), rgba(255, 255, 255, 0.035)),
+    rgba(7, 17, 42, 0.58);
+  color: rgba(255, 255, 255, 0.76);
+  text-align: center;
+}
+
+.live-podium-empty strong {
+  color: #fff9d8;
+  font-size: 1rem;
+}
+
+.live-podium-empty span {
+  max-width: 230px;
+  font-size: 0.84rem;
+  line-height: 1.35;
+}
+
 .live-ranking-row {
   grid-template-columns: 46px minmax(0, 1fr);
   border-radius: 18px;

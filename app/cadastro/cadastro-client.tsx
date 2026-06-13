@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
 import { Check, CreditCard, FileUp, UserRound } from "lucide-react";
 import { AppFrame, GlassCard, StatusBadge } from "@/components/live-ui";
-import { appSettings } from "@/lib/mock";
 import { createClient } from "@/lib/supabase/client";
 
 const steps = [
@@ -25,6 +24,13 @@ type SignupUser = {
   identities?: unknown[] | null;
 };
 
+function formatCurrency(cents: number) {
+  return new Intl.NumberFormat("pt-BR", {
+    currency: "BRL",
+    style: "currency",
+  }).format(cents / 100);
+}
+
 function getSignupErrorMessage(error?: SignupError | null) {
   const normalized = `${error?.code ?? ""} ${error?.message ?? ""}`.toLowerCase();
 
@@ -43,7 +49,13 @@ function getSignupErrorMessage(error?: SignupError | null) {
   return "Não foi possível criar sua conta. Verifique os dados e tente novamente.";
 }
 
-export function CadastroClient() {
+export function CadastroClient({
+  paymentAmountCents,
+  paymentLink,
+}: {
+  paymentAmountCents: number;
+  paymentLink: string;
+}) {
   const router = useRouter();
   const [step, setStep] = useState(0);
   const [fullName, setFullName] = useState("");
@@ -156,7 +168,7 @@ export function CadastroClient() {
     <AppFrame
       eyebrow="Cadastro"
       title="Quero participar"
-      action={<StatusBadge tone="warning">R$ 50,00</StatusBadge>}
+      action={paymentAmountCents > 0 ? <StatusBadge tone="warning">{formatCurrency(paymentAmountCents)}</StatusBadge> : undefined}
     >
       <div className="live-register-steps" aria-label="Etapas do cadastro">
         {steps.map((item, index) => {
@@ -218,9 +230,13 @@ export function CadastroClient() {
           <div className="live-copy-stack">
             <strong>Pagamento NuBank</strong>
             <p>O valor é fixo e o acesso só será liberado após validação manual do Super Admin.</p>
-            <a className="live-primary-action" href={appSettings.paymentLink} rel="noreferrer" target="_blank">
-              Pagar agora
-            </a>
+            {paymentLink ? (
+              <a className="live-primary-action" href={paymentLink} rel="noreferrer" target="_blank">
+                Pagar agora
+              </a>
+            ) : (
+              <p className="live-form-note">Link de pagamento ainda não configurado.</p>
+            )}
           </div>
         )}
 

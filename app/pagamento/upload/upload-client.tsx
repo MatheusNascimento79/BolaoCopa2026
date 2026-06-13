@@ -4,15 +4,27 @@ import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Check, CreditCard, FileUp, RotateCcw } from "lucide-react";
 import { AppFrame, GlassCard, StatusBadge } from "@/components/live-ui";
-import { appSettings } from "@/lib/mock";
 import { createClient } from "@/lib/supabase/client";
+
+function formatCurrency(cents: number) {
+  return new Intl.NumberFormat("pt-BR", {
+    currency: "BRL",
+    style: "currency",
+  }).format(cents / 100);
+}
 
 function formatFileSize(bytes: number) {
   if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))} KB`;
   return `${(bytes / (1024 * 1024)).toFixed(1).replace(".", ",")} MB`;
 }
 
-export function UploadPagamentoClient() {
+export function UploadPagamentoClient({
+  paymentAmountCents,
+  paymentLink,
+}: {
+  paymentAmountCents: number;
+  paymentLink: string;
+}) {
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
   const [file, setFile] = useState<File | null>(null);
@@ -82,7 +94,11 @@ export function UploadPagamentoClient() {
     <AppFrame
       eyebrow="Cadastro"
       title="Pagamento"
-      action={<StatusBadge tone={file ? "success" : "warning"}>{file ? "Pronto" : "R$ 50,00"}</StatusBadge>}
+      action={
+        <StatusBadge tone={file ? "success" : "warning"}>
+          {file ? "Pronto" : paymentAmountCents > 0 ? formatCurrency(paymentAmountCents) : "Pagamento"}
+        </StatusBadge>
+      }
     >
       <GlassCard className="live-register-card" tone="blue">
         <div className="live-register-icon">
@@ -92,9 +108,13 @@ export function UploadPagamentoClient() {
         <div className="live-copy-stack">
           <strong>Pagamento NuBank</strong>
           <p>Envie o comprovante Pix para validação manual do Super Admin.</p>
-          <a className="live-primary-action" href={appSettings.paymentLink} rel="noreferrer" target="_blank">
-            Pagar agora
-          </a>
+          {paymentLink ? (
+            <a className="live-primary-action" href={paymentLink} rel="noreferrer" target="_blank">
+              Pagar agora
+            </a>
+          ) : (
+            <p className="live-form-note">Link de pagamento ainda não configurado.</p>
+          )}
         </div>
       </GlassCard>
 

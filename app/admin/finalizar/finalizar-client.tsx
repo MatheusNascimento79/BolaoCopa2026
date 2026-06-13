@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { ArrowLeft, Clock3, Lock, Unlock } from "lucide-react";
 import { AppFrame, GlassCard, StatusBadge } from "@/components/live-ui";
-import type { AppSettings, AppSettingsAuditEntry } from "@/lib/mock";
+import type { AppSettings, AppSettingsAuditEntry } from "@/lib/domain/types";
 
 type AdminFinalizarClientProps = {
   initialSettings: AppSettings;
@@ -26,7 +26,7 @@ export function AdminFinalizarClient({ initialSettings }: AdminFinalizarClientPr
     setSaving(true);
 
     try {
-      const response = await fetch("/api/mock/settings/bets", {
+      const response = await fetch("/api/settings/bets", {
         body: JSON.stringify({ actorId: "profile-admin", open: !open }),
         headers: { "Content-Type": "application/json" },
         method: "PATCH",

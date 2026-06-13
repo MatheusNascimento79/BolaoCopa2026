@@ -3,9 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { Check } from "lucide-react";
-import { useMemo } from "react";
 import { LiveBottomNav } from "@/components/live-ui";
-import { getBetForProfile } from "@/lib/mock";
 
 const prizePoolCents = 1245000;
 const whatsappGroupUrl = "https://chat.whatsapp.com/F7mycs099hjFrz5Jn9uGq6?mode=gi_t";
@@ -25,10 +23,7 @@ function firstName(profile: HomeProfile | null) {
   return profile.nickname.split(" ")[0] || profile.fullName.split(" ")[0] || "Zé";
 }
 
-export function HomeClient({ profile }: { profile: HomeProfile }) {
-  const currentBet = useMemo(() => (profile ? getBetForProfile(profile.id) : null), [profile]);
-  const hasBet = Boolean(currentBet?.locked);
-
+export function HomeClient({ hasBet, profile }: { hasBet: boolean; profile: HomeProfile }) {
   return (
     <main className="live-home-frame">
       <div className="live-home-field" aria-hidden="true" />

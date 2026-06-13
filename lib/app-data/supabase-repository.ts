@@ -8,7 +8,7 @@ import type {
   Profile,
   ReceiptStatus,
   Team,
-} from "@/lib/mock";
+} from "@/lib/domain/types";
 import type {
   BetsOpenResult,
   PaymentDecision,
@@ -260,14 +260,14 @@ export async function getSettings(): Promise<BetsOpenResult> {
       .order("created_at", { ascending: false })
       .limit(12),
   ]);
-  const value = (setting?.value ?? { open: true }) as { open?: boolean; paymentAmountCents?: number; paymentLink?: string };
+  const value = (setting?.value ?? {}) as { open?: boolean; paymentAmountCents?: number; paymentLink?: string };
 
   return {
     settings: {
-      betsOpen: value.open !== false,
+      betsOpen: value.open === true,
       registrationOpen: true,
-      paymentAmountCents: value.paymentAmountCents ?? 5000,
-      paymentLink: value.paymentLink ?? "https://nubank.com.br/cobrar/1j9mue/6851768c-2d65-4c8b-8e40-6ef378cf93f8",
+      paymentAmountCents: typeof value.paymentAmountCents === "number" ? value.paymentAmountCents : 0,
+      paymentLink: typeof value.paymentLink === "string" ? value.paymentLink : "",
       updatedBy: "supabase",
       updatedAt: new Date().toISOString(),
       auditTrail: ((auditRows ?? []) as AuditRow[]).map(auditFromRow),

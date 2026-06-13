@@ -1,6 +1,7 @@
 import { requireAppAccess } from "@/lib/access/profile";
 import { getPaymentSummary, listBets, listProfiles, listTeams } from "@/lib/app-data";
-import { bets, calculateRankingEntries, paymentSummary, profiles, type Bet, type Team } from "@/lib/mock";
+import type { Bet, Team } from "@/lib/domain/types";
+import { calculateRankingEntries } from "@/lib/ranking/calculate";
 import { getWorldCupAdapter } from "@/lib/worldcup";
 import { RankingClient } from "./ranking-client";
 
@@ -34,19 +35,19 @@ export default async function RankingPage() {
   const profile = await requireAppAccess();
   const adapter = getWorldCupAdapter();
   const [teamsResult, storedBets, storedProfiles, storedTeams, storedPaymentSummary] = await Promise.all([
-    adapter.syncTeams(),
+    adapter.syncTeams().catch(() => ({ data: [] as Team[], source: adapter.source, syncedAt: new Date().toISOString() })),
     listBets(),
     listProfiles(),
     listTeams(),
     getPaymentSummary(),
   ]);
-  const realDataAvailable = storedBets.length > 0 && storedProfiles.length > 0;
+  const realDataAvailable = storedBets.length > 0 && storedProfiles.length > 0 && teamsResult.data.length > 0;
   const snapshotAt = new Date().toISOString();
   const rankingEntries = calculateRankingEntries({
-    betList: normalizeBetsForTeams(realDataAvailable ? storedBets : bets, teamsResult.data, storedTeams),
-    profileList: realDataAvailable ? storedProfiles : profiles,
+    betList: realDataAvailable ? normalizeBetsForTeams(storedBets, teamsResult.data, storedTeams) : [],
+    profileList: realDataAvailable ? storedProfiles : [],
     teamList: teamsResult.data,
-    totalPrizeCents: realDataAvailable ? storedPaymentSummary.totalRaisedCents : paymentSummary.totalRaisedCents,
+    totalPrizeCents: realDataAvailable ? storedPaymentSummary.totalRaisedCents : 0,
     snapshotAt,
   });
 
@@ -54,7 +55,7 @@ export default async function RankingPage() {
     <RankingClient
       activeUserId={profile.id}
       initialEntries={rankingEntries}
-      paidParticipants={realDataAvailable ? storedPaymentSummary.paid : paymentSummary.paidParticipants}
+      paidParticipants={storedPaymentSummary.paid}
     />
   );
 }

@@ -9,7 +9,7 @@ import {
   StatusBadge,
   TeamPickCard,
 } from "@/components/live-ui";
-import type { Bet, Team } from "@/lib/mock";
+import type { Bet, Team } from "@/lib/domain/types";
 
 type Slot = "championTeamId" | "runnerUpTeamId" | "thirdPlaceTeamId";
 
@@ -75,7 +75,7 @@ export function ApostaClient({ bet, betsOpen, profileId, teams }: ApostaClientPr
     setFeedback("");
 
     try {
-      const response = await fetch("/api/mock/bets", {
+      const response = await fetch("/api/bets", {
         body: JSON.stringify({ profileId, userId: profileId, ...picks }),
         headers: { "Content-Type": "application/json" },
         method: "POST",

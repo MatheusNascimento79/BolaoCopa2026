@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { CreditCard, ShieldCheck, ToggleRight } from "lucide-react";
 import { AppFrame, GlassCard, StatusBadge } from "@/components/live-ui";
-import { MockLogoutLink } from "@/components/mock-logout-link";
+import { LogoutLink } from "@/components/logout-link";
 import { requireSuperAdmin } from "@/lib/access/profile";
 
 export default async function AdminPage() {
@@ -33,7 +33,7 @@ export default async function AdminPage() {
             <small>Abrir ou fechar rodada</small>
           </span>
         </Link>
-        <MockLogoutLink />
+        <LogoutLink />
       </section>
     </AppFrame>
   );

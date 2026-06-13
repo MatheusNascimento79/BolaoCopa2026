@@ -1,5 +1,6 @@
 import { getBetForUser, getSettings, listTeams } from "@/lib/app-data";
 import { requireAppAccess } from "@/lib/access/profile";
+import type { Team } from "@/lib/domain/types";
 import { getWorldCupAdapter } from "@/lib/worldcup";
 import { ApostaClient } from "./aposta-client";
 
@@ -10,7 +11,7 @@ export default async function ApostaPage() {
 
   const adapter = getWorldCupAdapter();
   const [teamsResult, storedTeams, currentBet, { settings }] = await Promise.all([
-    adapter.syncTeams(),
+    adapter.syncTeams().catch(() => ({ data: [] as Team[], source: adapter.source, syncedAt: new Date().toISOString() })),
     listTeams(),
     getBetForUser(profile.id),
     getSettings(),

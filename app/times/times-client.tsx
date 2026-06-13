@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { Search, ShieldCheck } from "lucide-react";
 import { AppFrame, GlassCard, LiveBottomNav, StatusBadge } from "@/components/live-ui";
-import type { Team } from "@/lib/mock";
+import type { Team } from "@/lib/domain/types";
 
 const flagByCode: Record<string, string> = {
   ARG: "🇦🇷",

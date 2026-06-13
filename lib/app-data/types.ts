@@ -1,4 +1,4 @@
-import type { AppSettings, Bet, PaymentReceipt, Profile } from "@/lib/mock";
+import type { AppSettings, Bet, PaymentReceipt, Profile } from "@/lib/domain/types";
 
 export type PaymentReceiptWithProfile = PaymentReceipt & {
   profile: Pick<Profile, "fullName" | "nickname"> | null;
