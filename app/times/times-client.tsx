@@ -56,6 +56,10 @@ export function TimesClient({
   }, [initialTeams]);
 
   useEffect(() => {
+    void refreshTeams();
+  }, [refreshTeams]);
+
+  useEffect(() => {
     const refreshOnFocus = () => void refreshTeams();
     window.addEventListener("focus", refreshOnFocus);
     document.addEventListener("visibilitychange", refreshOnFocus);

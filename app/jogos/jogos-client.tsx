@@ -83,6 +83,10 @@ export function JogosClient({ activeStage, betsDeadlineAt, betsOpen, initialMatc
   }, [initialMatches, initialTeams]);
 
   useEffect(() => {
+    void refreshMatches();
+  }, [refreshMatches]);
+
+  useEffect(() => {
     const refreshOnFocus = () => void refreshMatches();
     window.addEventListener("focus", refreshOnFocus);
     document.addEventListener("visibilitychange", refreshOnFocus);
