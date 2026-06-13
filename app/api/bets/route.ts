@@ -34,7 +34,20 @@ export async function POST(request: Request) {
     );
   } catch (error) {
     const message = error instanceof Error ? error.message : "bet_submit_failed";
-    const status = message === "profile_not_allowed" || message === "payment_not_approved" || message === "bets_closed" ? 403 : 409;
-    return NextResponse.json({ error: message }, { status });
+    const normalizedMessage = normalizeBetError(message);
+    const status = ["profile_not_allowed", "payment_not_approved", "bets_closed", "bet_persist_permission_denied"].includes(normalizedMessage)
+      ? 403
+      : 409;
+    return NextResponse.json({ error: normalizedMessage }, { status });
   }
+}
+
+function normalizeBetError(message: string) {
+  const normalized = message.toLowerCase();
+
+  if (normalized.includes("row-level security") || normalized.includes("violates row-level")) {
+    return "bet_persist_permission_denied";
+  }
+
+  return message;
 }

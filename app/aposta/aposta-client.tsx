@@ -93,13 +93,16 @@ export function ApostaClient({ bet, betsDeadlineAt, betsOpen, teams }: ApostaCli
         method: "POST",
       });
 
-      if (!response.ok) throw new Error("bet_submit_failed");
+      if (!response.ok) {
+        const payload = (await response.json().catch(() => null)) as { error?: string } | null;
+        throw new Error(payload?.error ?? "bet_submit_failed");
+      }
 
       setHasSavedBet(true);
       setConfirmOpen(false);
       setFeedback(hasSavedBet ? "Aposta atualizada." : "Aposta feita.");
-    } catch {
-      setFeedback("Não foi possível salvar a aposta agora.");
+    } catch (error) {
+      setFeedback(getSubmitErrorMessage(error));
     } finally {
       setSaving(false);
     }
@@ -342,4 +345,17 @@ export function ApostaClient({ bet, betsDeadlineAt, betsOpen, teams }: ApostaCli
       )}
     </AppFrame>
   );
+}
+
+function getSubmitErrorMessage(error: unknown) {
+  const message = error instanceof Error ? error.message : "";
+
+  if (message === "payment_not_approved") return "Seu pagamento precisa estar aprovado para salvar a aposta.";
+  if (message === "profile_not_allowed") return "Seu perfil não está liberado para salvar a aposta.";
+  if (message === "bet_persist_permission_denied") return "Permissão de aposta não liberada. Fale com o Super Admin.";
+  if (message === "bets_closed") return "O período de edição das apostas está encerrado.";
+  if (message === "bet_duplicate_teams") return "Escolha três seleções diferentes.";
+  if (message === "invalid_team_selection") return "Uma das seleções escolhidas não está disponível.";
+
+  return "Não foi possível salvar a aposta agora.";
 }

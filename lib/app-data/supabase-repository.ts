@@ -484,7 +484,9 @@ export async function submitBet(input: SubmitBetInput): Promise<SubmitBetResult>
     .maybeSingle();
 
   if (profileError || !profile) throw new Error("profile_not_allowed");
-  if (profile.role !== "participant" || profile.payment_status !== "pago") throw new Error("payment_not_approved");
+  if (!["participant", "super_admin"].includes(profile.role) || profile.payment_status !== "pago") {
+    throw new Error("payment_not_approved");
+  }
 
   const { data: existingBet, error: existingBetError } = await supabase
     .from("bets")
