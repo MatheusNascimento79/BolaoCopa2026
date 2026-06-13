@@ -35,7 +35,7 @@ export async function POST(request: Request) {
   } catch (error) {
     const message = error instanceof Error ? error.message : "bet_submit_failed";
     const normalizedMessage = normalizeBetError(message);
-    const status = ["profile_not_allowed", "payment_not_approved", "bets_closed", "bet_persist_permission_denied"].includes(normalizedMessage)
+    const status = ["profile_not_allowed", "payment_not_approved", "bets_closed", "bet_persist_permission_denied", "unauthenticated"].includes(normalizedMessage)
       ? 403
       : 409;
     return NextResponse.json({ error: normalizedMessage }, { status });
@@ -47,6 +47,14 @@ function normalizeBetError(message: string) {
 
   if (normalized.includes("row-level security") || normalized.includes("violates row-level")) {
     return "bet_persist_permission_denied";
+  }
+
+  if (normalized.includes("infinite recursion") && normalized.includes("bets")) {
+    return "bet_persist_permission_denied";
+  }
+
+  if (normalized.includes("duplicate key") && normalized.includes("bets_user_id")) {
+    return "bet_already_exists";
   }
 
   return message;

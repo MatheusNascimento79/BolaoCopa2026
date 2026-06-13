@@ -388,7 +388,9 @@ function getSubmitErrorMessage(error: unknown) {
 
   if (message === "payment_not_approved") return "Seu pagamento precisa estar aprovado para salvar a aposta.";
   if (message === "profile_not_allowed") return "Seu perfil não está liberado para salvar a aposta.";
+  if (message === "unauthenticated") return "Sua sessão expirou. Entre novamente para salvar a aposta.";
   if (message === "bet_persist_permission_denied") return "Permissão de aposta não liberada. Fale com o Super Admin.";
+  if (message === "bet_already_exists") return "Você já tem uma aposta salva. Recarregue a página para editar.";
   if (message === "bets_closed") return "O período de edição das apostas está encerrado.";
   if (message === "bet_duplicate_teams") return "Escolha três seleções diferentes.";
   if (message === "invalid_team_selection") return "Uma das seleções escolhidas não está disponível.";
