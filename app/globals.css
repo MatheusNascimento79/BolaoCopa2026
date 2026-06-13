@@ -2767,6 +2767,11 @@ input {
   backdrop-filter: blur(10px);
 }
 
+.live-payment-backdrop {
+  align-items: center;
+  padding-top: calc(24px + env(safe-area-inset-top));
+}
+
 .live-team-modal {
   display: grid;
   gap: 14px;
