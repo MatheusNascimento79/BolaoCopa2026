@@ -9,9 +9,22 @@ import { resolveAccessPath } from "@/lib/access/paths";
 import { createClient } from "@/lib/supabase/client";
 
 type LoginProfile = {
+  id: string;
+  email: string;
+  full_name: string;
+  nickname: string;
   role: "participant" | "super_admin";
   payment_status: "pendente" | "aguardando" | "pago";
 };
+
+type AuthUserMetadata = {
+  full_name?: string;
+  nickname?: string;
+};
+
+function fallbackNameFromEmail(email: string) {
+  return email.split("@")[0] || "Participante";
+}
 
 export function AuthScreen() {
   const router = useRouter();
@@ -26,7 +39,7 @@ export function AuthScreen() {
     setErrorMessage("");
 
     const supabase = createClient();
-    const { error } = await supabase.auth.signInWithPassword({
+    const { data: signInData, error } = await supabase.auth.signInWithPassword({
       email: email.trim(),
       password,
     });
@@ -37,6 +50,7 @@ export function AuthScreen() {
       return;
     }
 
+    const normalizedEmail = email.trim().toLowerCase();
     const { data: claimsData } = await supabase.auth.getClaims();
     const userId = claimsData?.claims?.sub;
 
@@ -48,18 +62,46 @@ export function AuthScreen() {
 
     const { data: profile, error: profileError } = await supabase
       .from("profiles")
-      .select("role,payment_status")
+      .select("id,email,full_name,nickname,role,payment_status")
       .eq("id", userId)
-      .single<LoginProfile>();
+      .maybeSingle<LoginProfile>();
 
-    if (profileError || !profile) {
-      setErrorMessage("Perfil ainda não configurado. Fale com o administrador.");
+    if (profileError) {
+      setErrorMessage("Não foi possível carregar seu perfil agora.");
       setStatus("idle");
       return;
     }
 
+    let resolvedProfile = profile;
+
+    if (!resolvedProfile) {
+      const metadata = (signInData.user?.user_metadata ?? {}) as AuthUserMetadata;
+      const fullName = metadata.full_name?.trim() || fallbackNameFromEmail(normalizedEmail);
+      const nickname = metadata.nickname?.trim() || fallbackNameFromEmail(normalizedEmail);
+      const { data: createdProfile, error: createProfileError } = await supabase
+        .from("profiles")
+        .insert({
+          email: normalizedEmail,
+          full_name: fullName,
+          id: userId,
+          nickname,
+          payment_status: "pendente",
+          role: "participant",
+        })
+        .select("id,email,full_name,nickname,role,payment_status")
+        .single<LoginProfile>();
+
+      if (createProfileError || !createdProfile) {
+        setErrorMessage("Não foi possível retomar seu cadastro agora.");
+        setStatus("idle");
+        return;
+      }
+
+      resolvedProfile = createdProfile;
+    }
+
     router.refresh();
-    router.replace(resolveAccessPath(profile));
+    router.replace(resolveAccessPath(resolvedProfile));
   }
 
   return (
