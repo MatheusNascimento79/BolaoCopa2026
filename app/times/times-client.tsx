@@ -6,13 +6,14 @@ import { AppFrame, GlassCard, LiveBottomNav, StatusBadge, TeamFlag } from "@/com
 import type { Team } from "@/lib/domain/types";
 
 export function TimesClient({ teams }: { teams: Team[] }) {
-  const [query, setQuery] = useState("");
+  const [selectedTeamId, setSelectedTeamId] = useState("");
   const [group, setGroup] = useState("Todos");
   const groups = useMemo(() => ["Todos", ...Array.from(new Set(teams.map((team) => team.groupName)))], [teams]);
+  const teamOptions = useMemo(() => sortTeamsByName(teams), [teams]);
   const filtered = teams.filter((team) => {
-    const matchesQuery = team.name.toLowerCase().includes(query.toLowerCase());
+    const matchesTeam = selectedTeamId.length === 0 || team.id === selectedTeamId;
     const matchesGroup = group === "Todos" || team.groupName === group;
-    return matchesQuery && matchesGroup;
+    return matchesTeam && matchesGroup;
   });
 
   return (
@@ -31,9 +32,20 @@ export function TimesClient({ teams }: { teams: Team[] }) {
       </GlassCard>
 
       <GlassCard className="live-filter-card" tone="blue">
-        <label className="live-search-field">
+        <label className="live-search-field live-filter-select">
           <Search size={18} />
-          <input placeholder="Buscar seleção" value={query} onChange={(event) => setQuery(event.target.value)} />
+          <select
+            aria-label="Filtrar por país"
+            value={selectedTeamId}
+            onChange={(event) => setSelectedTeamId(event.target.value)}
+          >
+            <option value="">Todos os países</option>
+            {teamOptions.map((team) => (
+              <option key={team.id} value={team.id}>
+                {team.name}
+              </option>
+            ))}
+          </select>
         </label>
         <div className="live-filter-pills">
           {groups.map((item) => (
@@ -48,7 +60,7 @@ export function TimesClient({ teams }: { teams: Team[] }) {
         {filtered.length === 0 && (
           <GlassCard className="live-empty-state" tone="blue">
             <strong>Nenhuma seleção encontrada</strong>
-            <p>Ajuste a busca ou escolha outro grupo.</p>
+            <p>Ajuste a seleção ou escolha outro grupo.</p>
           </GlassCard>
         )}
 
@@ -74,4 +86,8 @@ export function TimesClient({ teams }: { teams: Team[] }) {
       </section>
     </AppFrame>
   );
+}
+
+function sortTeamsByName(teamList: Team[]) {
+  return [...teamList].sort((teamA, teamB) => teamA.name.localeCompare(teamB.name, "pt-BR"));
 }

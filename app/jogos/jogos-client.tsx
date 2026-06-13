@@ -32,7 +32,7 @@ const statusFilters: Array<{ label: string; value: StatusFilter }> = [
 export function JogosClient({ activeStage, initialMatches, initialTeams }: JogosClientProps) {
   const [matches, setMatches] = useState(initialMatches);
   const [teams, setTeams] = useState(initialTeams);
-  const [countryQuery, setCountryQuery] = useState("");
+  const [selectedTeamId, setSelectedTeamId] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("todos");
   const [refreshing, setRefreshing] = useState(false);
   const [statusText, setStatusText] = useState("Tabela sincronizada.");
@@ -45,9 +45,10 @@ export function JogosClient({ activeStage, initialMatches, initialTeams }: Jogos
     href: `/jogos?fase=${stage}`,
   }));
   const stageMatches = useMemo(() => matchesByStage[activeStage] ?? [], [activeStage, matchesByStage]);
+  const teamOptions = useMemo(() => sortTeamsByName(teams), [teams]);
   const visibleMatches = useMemo(
-    () => filterMatches(stageMatches, teamMap, countryQuery, statusFilter),
-    [countryQuery, stageMatches, statusFilter, teamMap],
+    () => filterMatches(stageMatches, selectedTeamId, statusFilter),
+    [selectedTeamId, stageMatches, statusFilter],
   );
   const liveMatches = visibleMatches.filter((match) => match.status === "ao_vivo");
   const spotlightMatch = liveMatches[0] ?? visibleMatches.find((match) => match.status === "agendado") ?? visibleMatches[0] ?? null;
@@ -93,13 +94,20 @@ export function JogosClient({ activeStage, initialMatches, initialTeams }: Jogos
       <p className="live-phase-caption">{stageLabels[activeStage]} · {statusText}</p>
 
       <GlassCard className="live-filter-card live-games-filter" tone="blue">
-        <label className="live-search-field">
+        <label className="live-search-field live-filter-select">
           <Search size={18} />
-          <input
-            placeholder="Filtrar por país"
-            value={countryQuery}
-            onChange={(event) => setCountryQuery(event.target.value)}
-          />
+          <select
+            aria-label="Filtrar por país"
+            value={selectedTeamId}
+            onChange={(event) => setSelectedTeamId(event.target.value)}
+          >
+            <option value="">Todos os países</option>
+            {teamOptions.map((team) => (
+              <option key={team.id} value={team.id}>
+                {team.name}
+              </option>
+            ))}
+          </select>
         </label>
         <div className="live-filter-pills" aria-label="Filtrar por status do jogo">
           {statusFilters.map((filter) => (
@@ -134,7 +142,7 @@ export function JogosClient({ activeStage, initialMatches, initialTeams }: Jogos
         {visibleMatches.length === 0 && (
           <GlassCard className="live-empty-state" tone="blue">
             <strong>Nenhum jogo encontrado</strong>
-            <p>Ajuste o país, o status ou escolha outra fase.</p>
+            <p>Ajuste a seleção, o status ou escolha outra fase.</p>
           </GlassCard>
         )}
 
@@ -179,33 +187,20 @@ export function JogosClient({ activeStage, initialMatches, initialTeams }: Jogos
   );
 }
 
-function filterMatches(
-  matches: Match[],
-  teamMap: Map<string, Team>,
-  countryQuery: string,
-  statusFilter: StatusFilter,
-) {
-  const normalizedQuery = normalizeSearch(countryQuery);
-
+function filterMatches(matches: Match[], selectedTeamId: string, statusFilter: StatusFilter) {
   return matches.filter((match) => {
-    const homeTeam = teamMap.get(match.homeTeamId);
-    const awayTeam = teamMap.get(match.awayTeamId);
     const matchesCountry =
-      normalizedQuery.length === 0 ||
-      normalizeSearch(homeTeam?.name ?? "").includes(normalizedQuery) ||
-      normalizeSearch(awayTeam?.name ?? "").includes(normalizedQuery);
+      selectedTeamId.length === 0 ||
+      match.homeTeamId === selectedTeamId ||
+      match.awayTeamId === selectedTeamId;
     const matchesStatus = statusFilter === "todos" || match.status === statusFilter;
 
     return matchesCountry && matchesStatus;
   });
 }
 
-function normalizeSearch(value: string) {
-  return value
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .trim();
+function sortTeamsByName(teamList: Team[]) {
+  return [...teamList].sort((teamA, teamB) => teamA.name.localeCompare(teamB.name, "pt-BR"));
 }
 
 function getMatchCardStatus(status: MatchStatus) {

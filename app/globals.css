@@ -3151,6 +3151,35 @@ input {
   line-height: 1.42;
 }
 
+.live-filter-select {
+  position: relative;
+}
+
+.live-filter-select::after {
+  content: "";
+  width: 9px;
+  height: 9px;
+  border-right: 2px solid rgba(4, 17, 42, 0.48);
+  border-bottom: 2px solid rgba(4, 17, 42, 0.48);
+  pointer-events: none;
+  position: absolute;
+  right: 15px;
+  top: 50%;
+  transform: translateY(-66%) rotate(45deg);
+}
+
+.live-filter-select select {
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  appearance: none;
+  background: transparent;
+  color: #06143a;
+  font: inherit;
+  padding-right: 28px;
+}
+
 /* Final mobile polish for games/teams. Keep this at the end to win over older duplicated rules. */
 .live-games-filter {
   gap: 10px;
