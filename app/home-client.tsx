@@ -5,7 +5,6 @@ import Image from "next/image";
 import { Check } from "lucide-react";
 import { LiveBottomNav } from "@/components/live-ui";
 
-const prizePoolCents = 1245000;
 const whatsappGroupUrl = "https://chat.whatsapp.com/F7mycs099hjFrz5Jn9uGq6?mode=gi_t";
 
 function money(cents: number) {
@@ -23,7 +22,7 @@ function firstName(profile: HomeProfile | null) {
   return profile.nickname.split(" ")[0] || profile.fullName.split(" ")[0] || "Zé";
 }
 
-export function HomeClient({ hasBet, profile }: { hasBet: boolean; profile: HomeProfile }) {
+export function HomeClient({ hasBet, prizePoolCents, profile }: { hasBet: boolean; prizePoolCents: number; profile: HomeProfile }) {
   return (
     <main className="live-home-frame">
       <div className="live-home-field" aria-hidden="true" />

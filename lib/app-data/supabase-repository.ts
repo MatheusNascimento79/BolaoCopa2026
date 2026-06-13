@@ -3,6 +3,7 @@ import type {
   AppSettings,
   AppSettingsAuditEntry,
   Bet,
+  Match,
   PaymentReceipt,
   PaymentStatus,
   Profile,
@@ -49,6 +50,21 @@ type BetRow = {
   submitted_at: string;
 };
 
+type MatchRow = {
+  id: string;
+  external_id: string;
+  stage: Match["stage"];
+  group_name: string | null;
+  kickoff_at: string;
+  venue: string;
+  city: string;
+  home_team_id: string | null;
+  away_team_id: string | null;
+  home_score: number | null;
+  away_score: number | null;
+  status: Match["status"];
+};
+
 type ReceiptRow = {
   id: string;
   user_id: string;
@@ -68,6 +84,14 @@ type ReceiptRow = {
     full_name: string;
     nickname: string;
   }> | null;
+};
+
+type PaymentSummaryRow = {
+  paid: number;
+  awaiting: number;
+  pending: number;
+  rejected: number;
+  total_raised_cents: number;
 };
 
 type AuditRow = {
@@ -117,6 +141,23 @@ function betFromRow(row: BetRow): Bet {
     thirdPlaceTeamId: row.third_place_team_id,
     submittedAt: row.submitted_at,
     locked: true,
+  };
+}
+
+function matchFromRow(row: MatchRow): Match {
+  return {
+    id: row.id,
+    externalId: row.external_id,
+    stage: row.stage,
+    groupName: row.group_name ?? undefined,
+    kickoffAt: row.kickoff_at,
+    venue: row.venue,
+    city: row.city,
+    homeTeamId: row.home_team_id ?? "",
+    awayTeamId: row.away_team_id ?? "",
+    homeScore: row.home_score,
+    awayScore: row.away_score,
+    status: row.status,
   };
 }
 
@@ -197,6 +238,17 @@ export async function listTeams() {
   return ((data ?? []) as TeamRow[]).map(teamFromRow);
 }
 
+export async function listMatches() {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("matches")
+    .select("id,external_id,stage,group_name,kickoff_at,venue,city,home_team_id,away_team_id,home_score,away_score,status")
+    .order("kickoff_at", { ascending: true });
+
+  if (error) return [];
+  return ((data ?? []) as MatchRow[]).map(matchFromRow);
+}
+
 export async function listPaymentReceipts() {
   const supabase = await createClient();
   const { data, error } = await supabase
@@ -209,6 +261,21 @@ export async function listPaymentReceipts() {
 }
 
 export async function getPaymentSummary() {
+  const supabase = await createClient();
+  const { data: summaryData, error: summaryError } = await supabase.rpc("get_payment_summary");
+
+  if (!summaryError && Array.isArray(summaryData) && summaryData[0]) {
+    const summary = summaryData[0] as PaymentSummaryRow;
+
+    return {
+      awaiting: summary.awaiting,
+      paid: summary.paid,
+      pending: summary.pending,
+      rejected: summary.rejected,
+      totalRaisedCents: summary.total_raised_cents,
+    };
+  }
+
   const [profiles, receipts] = await Promise.all([listProfiles(), listPaymentReceipts()]);
   const paid = profiles.filter((profile) => profile.role === "participant" && profile.paymentStatus === "pago").length;
   const awaiting = profiles.filter((profile) => profile.paymentStatus === "aguardando").length;
@@ -285,7 +352,8 @@ export async function setBetsOpen(open: boolean, actorId?: string): Promise<Bets
   const supabase = await createClient();
   const { data: claimsData } = await supabase.auth.getClaims();
   const effectiveActorId = actorId ?? claimsData?.claims?.sub;
-  const previousOpen = (await getSettings()).settings.betsOpen;
+  const currentSettings = (await getSettings()).settings;
+  const previousOpen = currentSettings.betsOpen;
 
   if (!effectiveActorId) throw new Error("missing_actor");
 
@@ -294,7 +362,12 @@ export async function setBetsOpen(open: boolean, actorId?: string): Promise<Bets
     .update({
       updated_by: effectiveActorId,
       updated_at: new Date().toISOString(),
-      value: { open },
+      value: {
+        paymentAmountCents: currentSettings.paymentAmountCents,
+        paymentLink: currentSettings.paymentLink,
+        paymentPixKey: currentSettings.paymentPixKey,
+        open,
+      },
     })
     .eq("key", "bets_open");
 
@@ -339,6 +412,14 @@ export async function submitBet(input: SubmitBetInput): Promise<SubmitBetResult>
   const uniquePicks = new Set([input.championTeamId, input.runnerUpTeamId, input.thirdPlaceTeamId]);
 
   if (uniquePicks.size !== 3) throw new Error("bet_duplicate_teams");
+
+  const { count, error: teamsError } = await supabase
+    .from("teams")
+    .select("id", { count: "exact", head: true })
+    .in("id", [input.championTeamId, input.runnerUpTeamId, input.thirdPlaceTeamId]);
+
+  if (teamsError) throw new Error(teamsError.message);
+  if (count !== 3) throw new Error("invalid_team_selection");
 
   const { data, error } = await supabase
     .from("bets")

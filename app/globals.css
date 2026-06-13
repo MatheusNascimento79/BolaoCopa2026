@@ -317,8 +317,8 @@ input {
 
 .live-app-frame {
   position: relative;
-  min-height: 100svh;
-  overflow: hidden;
+  min-height: 100dvh;
+  overflow-x: hidden;
   background:
     radial-gradient(circle at 50% 20%, rgba(37, 135, 244, 0.24), transparent 24rem),
     radial-gradient(circle at 50% 78%, rgba(17, 160, 93, 0.18), transparent 24rem),
@@ -2579,34 +2579,53 @@ input {
 
 /* Country flags are visual assets, not framed badges. Keep them loose and large. */
 .live-flag-orb {
-  width: auto;
-  height: auto;
+  display: inline-grid;
+  place-items: center;
+  width: 58px;
+  height: 58px;
+  overflow: hidden;
   border: 0;
-  border-radius: 0;
-  background: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
   box-shadow: none;
   color: inherit;
-  font-size: 3.2rem;
+  font-size: 0.82rem;
+  font-weight: var(--weight-label);
   line-height: 1;
+}
+
+.live-flag-image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: contain;
+  filter: drop-shadow(0 8px 12px rgba(0, 0, 0, 0.28));
 }
 
 .live-team-card .live-flag-orb,
 .live-team-wide-card .live-flag-orb {
-  width: auto;
-  height: auto;
-  border-radius: 0;
-  font-size: 3.2rem;
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
 }
 
 .live-pick-medal {
-  width: auto;
-  height: auto;
+  width: 58px;
+  height: 58px;
+  display: grid;
+  place-items: center;
   border-radius: 0;
   background: none;
   box-shadow: none;
   color: inherit;
-  font-size: 3.2rem;
   line-height: 1;
+}
+
+.live-pick-medal .live-flag-orb {
+  width: 50px;
+  height: 50px;
 }
 
 .live-match-teams {
@@ -2780,6 +2799,11 @@ input {
   padding: 16px;
 }
 
+.live-select-team-modal {
+  grid-template-rows: auto minmax(0, 1fr);
+  overflow: hidden;
+}
+
 .live-modal-head {
   display: flex;
   align-items: center;
@@ -2808,14 +2832,16 @@ input {
 .live-modal-team-list {
   display: grid;
   gap: 10px;
+  min-height: 0;
   overflow-y: auto;
+  overscroll-behavior: contain;
   padding-right: 2px;
   scrollbar-width: thin;
 }
 
 .live-modal-team-list button {
   display: grid;
-  grid-template-columns: 76px minmax(0, 1fr) 24px;
+  grid-template-columns: 64px minmax(0, 1fr) 24px;
   align-items: center;
   gap: 10px;
   min-height: 72px;
@@ -2848,6 +2874,93 @@ input {
   display: block;
   color: var(--muted);
   font-size: var(--type-t3);
+}
+
+.live-confirm-list {
+  display: grid;
+  gap: 10px;
+}
+
+.live-confirm-list div {
+  display: grid;
+  gap: 2px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 16px;
+  padding: 12px;
+  background: rgba(5, 16, 45, 0.58);
+}
+
+.live-confirm-list span {
+  color: var(--muted);
+  font-size: var(--type-t3);
+}
+
+.live-confirm-list strong {
+  color: #fff;
+  font-size: var(--type-t2);
+}
+
+.live-loading-screen {
+  display: grid;
+  min-height: 100dvh;
+  place-items: center;
+  background:
+    radial-gradient(circle at 50% 24%, rgba(37, 135, 244, 0.22), transparent 22rem),
+    linear-gradient(180deg, #061233 0%, #020817 62%, #01030c 100%);
+  color: #fff;
+}
+
+.live-loading-card {
+  display: grid;
+  justify-items: center;
+  gap: 12px;
+}
+
+.live-loading-card span {
+  width: 34px;
+  height: 34px;
+  border: 3px solid rgba(255, 255, 255, 0.22);
+  border-top-color: var(--gold);
+  border-radius: 50%;
+  animation: live-spin 0.8s linear infinite;
+}
+
+.live-loading-card strong {
+  color: var(--gold);
+  font-size: var(--type-t2);
+}
+
+@keyframes live-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 480px) {
+  .live-bottom-nav,
+  .live-app-header,
+  .live-modal-backdrop {
+    backdrop-filter: none;
+  }
+
+  .live-team-pick {
+    min-height: 112px;
+  }
+
+  .live-team-pick strong,
+  .live-modal-team-list strong {
+    font-size: 1.04rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 .live-payment-modal {

@@ -5,6 +5,7 @@ export {
   MatchCard,
   MoneyPanel,
   RankingRow,
+  TeamFlag,
   TeamPickCard,
   type MatchCardProps,
   type MoneyPanelProps,

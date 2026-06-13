@@ -1,25 +1,10 @@
 import { AppFrame, GlassCard, LiveBottomNav, MatchCard, StageTabs, StatusBadge } from "@/components/live-ui";
 import { requireAppAccess } from "@/lib/access/profile";
+import { listMatches, listTeams } from "@/lib/app-data";
 import type { Match, Team, TournamentStage } from "@/lib/domain/types";
-import { getWorldCupAdapter } from "@/lib/worldcup";
 import { stageLabels, stageOrder } from "@/lib/worldcup/stages";
 
 const validStages = new Set<TournamentStage>(stageOrder);
-
-const flagByCode: Record<string, string> = {
-  ARG: "🇦🇷",
-  BRA: "🇧🇷",
-  ENG: "🏴",
-  ESP: "🇪🇸",
-  FRA: "🇫🇷",
-  GER: "🇩🇪",
-  JPN: "🇯🇵",
-  MAR: "🇲🇦",
-  MEX: "🇲🇽",
-  NZL: "🇳🇿",
-  POR: "🇵🇹",
-  USA: "🇺🇸",
-};
 
 type JogosPageProps = {
   searchParams?: Promise<{
@@ -30,14 +15,11 @@ type JogosPageProps = {
 export default async function JogosPage({ searchParams }: JogosPageProps) {
   await requireAppAccess();
 
-  const adapter = getWorldCupAdapter();
-  const [matchesResult, teamsResult, params] = await Promise.all([
-    adapter.syncMatches().catch(() => ({ data: [] as Match[], source: adapter.source, syncedAt: new Date().toISOString() })),
-    adapter.syncTeams().catch(() => ({ data: [] as Team[], source: adapter.source, syncedAt: new Date().toISOString() })),
+  const [matches, teams, params] = await Promise.all([
+    listMatches(),
+    listTeams(),
     searchParams,
   ]);
-  const matches = matchesResult.data;
-  const teams = teamsResult.data;
   const teamMap = new Map(teams.map((team) => [team.id, team]));
   const matchesByStage = groupMatchesByStage(matches);
   const stageTabs = stageOrder.map((stage) => ({
@@ -79,6 +61,13 @@ export default async function JogosPage({ searchParams }: JogosPageProps) {
       </GlassCard>
 
       <section className="live-stack" aria-label={`Jogos - ${stageLabels[activeStage]}`}>
+        {visibleMatches.length === 0 && (
+          <GlassCard className="live-empty-state" tone="blue">
+            <strong>Jogos ainda não disponíveis</strong>
+            <p>Aguardando dados oficiais salvos pelo Super Admin.</p>
+          </GlassCard>
+        )}
+
         {visibleMatches.map((match) => {
           const homeTeam = teamMap.get(match.homeTeamId);
           const awayTeam = teamMap.get(match.awayTeamId);
@@ -93,12 +82,12 @@ export default async function JogosPage({ searchParams }: JogosPageProps) {
               status={match.status === "encerrado" ? "done" : match.status === "ao_vivo" ? "live" : "scheduled"}
               home={{
                 name: homeTeam?.name ?? "A definir",
-                flag: homeTeam ? flagByCode[homeTeam.externalId] : undefined,
+                flagSrc: homeTeam?.flagUrl,
                 score: match.homeScore ?? undefined,
               }}
               away={{
                 name: awayTeam?.name ?? "A definir",
-                flag: awayTeam ? flagByCode[awayTeam.externalId] : undefined,
+                flagSrc: awayTeam?.flagUrl,
                 score: match.awayScore ?? undefined,
               }}
             />

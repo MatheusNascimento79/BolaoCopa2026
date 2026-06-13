@@ -2,23 +2,8 @@
 
 import { useMemo, useState } from "react";
 import { Search, ShieldCheck } from "lucide-react";
-import { AppFrame, GlassCard, LiveBottomNav, StatusBadge } from "@/components/live-ui";
+import { AppFrame, GlassCard, LiveBottomNav, StatusBadge, TeamFlag } from "@/components/live-ui";
 import type { Team } from "@/lib/domain/types";
-
-const flagByCode: Record<string, string> = {
-  ARG: "🇦🇷",
-  BRA: "🇧🇷",
-  ENG: "🏴",
-  ESP: "🇪🇸",
-  FRA: "🇫🇷",
-  GER: "🇩🇪",
-  JPN: "🇯🇵",
-  MAR: "🇲🇦",
-  MEX: "🇲🇽",
-  NZL: "🇳🇿",
-  POR: "🇵🇹",
-  USA: "🇺🇸",
-};
 
 export function TimesClient({ teams }: { teams: Team[] }) {
   const [query, setQuery] = useState("");
@@ -73,7 +58,7 @@ export function TimesClient({ teams }: { teams: Team[] }) {
           return (
             <GlassCard className="live-team-wide-card" key={team.id}>
               <button onClick={() => setExpanded(isOpen ? "" : team.id)} type="button">
-                <span className="live-flag-orb">{flagByCode[team.externalId] ?? team.externalId.slice(0, 2)}</span>
+                <TeamFlag label={team.name} src={team.flagUrl} />
                 <span>
                   <strong>{team.name}</strong>
                   <small>{team.groupName} · {team.confederation}</small>

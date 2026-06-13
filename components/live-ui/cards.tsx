@@ -5,6 +5,7 @@ import { GlassCard, StatusBadge } from "./primitives";
 type TeamSide = {
   name: string;
   flag?: string;
+  flagSrc?: string;
   score?: number | string;
 };
 
@@ -58,9 +59,17 @@ export function MatchCard({
 function TeamScore({ team, align }: { team: TeamSide; align: "left" | "right" }) {
   return (
     <div className={`live-team-score live-team-${align}`}>
-      <span className="live-flag-orb">{team.flag ?? team.name.slice(0, 2).toUpperCase()}</span>
+      <TeamFlag label={team.name} src={team.flagSrc} fallback={team.flag} />
       <strong>{team.name}</strong>
     </div>
+  );
+}
+
+export function TeamFlag({ label, src, fallback }: { label: string; src?: string; fallback?: string }) {
+  return (
+    <span className="live-flag-orb" aria-label={label}>
+      {src ? <span aria-hidden="true" className="live-flag-image" style={{ backgroundImage: `url(${src})` }} /> : (fallback ?? "")}
+    </span>
   );
 }
 
@@ -110,6 +119,7 @@ export type TeamPickCardProps = {
   label: string;
   teamName?: string;
   flag?: string;
+  flagSrc?: string;
   helper?: string;
   selected?: boolean;
   locked?: boolean;
@@ -121,6 +131,7 @@ export function TeamPickCard({
   label,
   teamName,
   flag,
+  flagSrc,
   helper,
   selected = false,
   locked = false,
@@ -129,7 +140,9 @@ export function TeamPickCard({
 }: TeamPickCardProps) {
   return (
     <GlassCard className={`live-team-pick ${selected ? "live-team-pick-selected" : ""} ${className}`.trim()}>
-      <div className="live-pick-medal">{flag ?? <Sparkles size={22} />}</div>
+      <div className="live-pick-medal">
+        {flagSrc || flag ? <TeamFlag label={teamName ?? label} src={flagSrc} fallback={flag} /> : <Sparkles size={22} />}
+      </div>
       <div>
         <span>{label}</span>
         <strong>{teamName ?? "Selecionar time"}</strong>

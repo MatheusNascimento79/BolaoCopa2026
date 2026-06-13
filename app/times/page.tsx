@@ -1,17 +1,11 @@
-import { getWorldCupAdapter } from "@/lib/worldcup";
 import { requireAppAccess } from "@/lib/access/profile";
-import type { Team } from "@/lib/domain/types";
+import { listTeams } from "@/lib/app-data";
 import { TimesClient } from "./times-client";
 
 export default async function TimesPage() {
   await requireAppAccess();
 
-  const adapter = getWorldCupAdapter();
-  const teamsResult = await adapter.syncTeams().catch(() => ({
-    data: [] as Team[],
-    source: adapter.source,
-    syncedAt: new Date().toISOString(),
-  }));
+  const teams = await listTeams();
 
-  return <TimesClient teams={teamsResult.data} />;
+  return <TimesClient teams={teams} />;
 }

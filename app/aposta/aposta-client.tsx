@@ -7,6 +7,7 @@ import {
   GlassCard,
   LiveBottomNav,
   StatusBadge,
+  TeamFlag,
   TeamPickCard,
 } from "@/components/live-ui";
 import type { Bet, Team } from "@/lib/domain/types";
@@ -16,7 +17,6 @@ type Slot = "championTeamId" | "runnerUpTeamId" | "thirdPlaceTeamId";
 type ApostaClientProps = {
   bet: Bet | null;
   betsOpen: boolean;
-  profileId: string;
   teams: Team[];
 };
 
@@ -26,41 +26,32 @@ const slotLabels: Record<Slot, string> = {
   thirdPlaceTeamId: "Terceiro colocado",
 };
 
-const flagByCode: Record<string, string> = {
-  ARG: "🇦🇷",
-  BRA: "🇧🇷",
-  ENG: "🏴",
-  ESP: "🇪🇸",
-  FRA: "🇫🇷",
-  GER: "🇩🇪",
-  JPN: "🇯🇵",
-  MAR: "🇲🇦",
-  MEX: "🇲🇽",
-  NZL: "🇳🇿",
-  POR: "🇵🇹",
-  USA: "🇺🇸",
-};
-
-export function ApostaClient({ bet, betsOpen, profileId, teams }: ApostaClientProps) {
+export function ApostaClient({ bet, betsOpen, teams }: ApostaClientProps) {
   const initialPicks = useMemo(
     () => ({
-      championTeamId: bet?.championTeamId ?? teams[0]?.id ?? "",
-      runnerUpTeamId: bet?.runnerUpTeamId ?? teams[1]?.id ?? "",
-      thirdPlaceTeamId: bet?.thirdPlaceTeamId ?? teams[2]?.id ?? "",
+      championTeamId: bet?.championTeamId ?? "",
+      runnerUpTeamId: bet?.runnerUpTeamId ?? "",
+      thirdPlaceTeamId: bet?.thirdPlaceTeamId ?? "",
     }),
-    [bet, teams],
+    [bet],
   );
   const [picks, setPicks] = useState(initialPicks);
   const [locked, setLocked] = useState(Boolean(bet?.locked));
   const [openSlot, setOpenSlot] = useState<Slot | null>(null);
+  const [confirmOpen, setConfirmOpen] = useState(false);
   const [rulesOpen, setRulesOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [feedback, setFeedback] = useState("");
-  const immutableBet = Boolean(bet?.locked);
+  const immutableBet = locked;
+  const hasTeams = teams.length > 0;
   const blockedByClosedBets = !betsOpen && !immutableBet;
 
   const duplicateIds = Object.values(picks).filter((teamId, index, all) => teamId && all.indexOf(teamId) !== index);
   const hasDuplicate = duplicateIds.length > 0;
+  const hasMissingPick = Object.values(picks).some((teamId) => !teamId);
+  const teamIds = useMemo(() => new Set(teams.map((team) => team.id)), [teams]);
+  const hasInvalidPick = Object.values(picks).some((teamId) => teamId && !teamIds.has(teamId));
+  const canSubmit = hasTeams && !hasMissingPick && !hasDuplicate && !hasInvalidPick && !immutableBet && !blockedByClosedBets && !saving;
 
   function updatePick(slot: Slot, teamId: string) {
     setLocked(false);
@@ -68,15 +59,32 @@ export function ApostaClient({ bet, betsOpen, profileId, teams }: ApostaClientPr
     setOpenSlot(null);
   }
 
-  async function confirmBet() {
-    if (hasDuplicate || immutableBet || blockedByClosedBets) return;
+  function requestConfirmation() {
+    if (!canSubmit) {
+      setFeedback(
+        !hasTeams
+          ? "Seleções ainda não disponíveis."
+          : hasMissingPick
+            ? "Escolha campeão, vice e terceiro lugar."
+            : hasDuplicate
+              ? "Escolha times diferentes para cada posição."
+              : "Revise os dados antes de confirmar.",
+      );
+      return;
+    }
+
+    setConfirmOpen(true);
+  }
+
+  async function submitConfirmedBet() {
+    if (!canSubmit) return;
 
     setSaving(true);
     setFeedback("");
 
     try {
       const response = await fetch("/api/bets", {
-        body: JSON.stringify({ profileId, userId: profileId, ...picks }),
+        body: JSON.stringify(picks),
         headers: { "Content-Type": "application/json" },
         method: "POST",
       });
@@ -84,6 +92,7 @@ export function ApostaClient({ bet, betsOpen, profileId, teams }: ApostaClientPr
       if (!response.ok) throw new Error("bet_submit_failed");
 
       setLocked(true);
+      setConfirmOpen(false);
       setFeedback("Aposta feita.");
     } catch {
       setFeedback("Não foi possível salvar a aposta agora.");
@@ -103,6 +112,8 @@ export function ApostaClient({ bet, betsOpen, profileId, teams }: ApostaClientPr
         <strong>
           {locked
             ? "Aposta salva — não será possível editar"
+            : !hasTeams
+              ? "Seleções indisponíveis"
             : blockedByClosedBets
               ? "Palpites encerrados"
               : "Escolha campeão, vice e terceiro lugar"}
@@ -111,6 +122,8 @@ export function ApostaClient({ bet, betsOpen, profileId, teams }: ApostaClientPr
           {feedback ||
             (locked
               ? "A regra do bolão permite apenas uma aposta confirmada por participante."
+              : !hasTeams
+                ? "Aguardando o Super Admin carregar a lista oficial de seleções."
               : blockedByClosedBets
                 ? "O Super Admin encerrou o envio de novas apostas."
                 : "Selecione times diferentes para cada posição antes de confirmar.")}
@@ -140,7 +153,7 @@ export function ApostaClient({ bet, betsOpen, profileId, teams }: ApostaClientPr
               <TeamPickCard
                 label={slotLabels[slot]}
                 teamName={team?.name}
-                flag={team ? flagByCode[team.externalId] : undefined}
+                flagSrc={team?.flagUrl}
                 selected={Boolean(team)}
                 locked={locked}
                 helper={duplicated ? "Escolha um time diferente para cada posição." : team?.groupName}
@@ -153,15 +166,15 @@ export function ApostaClient({ bet, betsOpen, profileId, teams }: ApostaClientPr
 
       <div className="live-action-row">
         <button className="live-secondary-action" type="button" onClick={() => {
-          if (!immutableBet && !blockedByClosedBets) {
+          if (!immutableBet && !blockedByClosedBets && hasTeams) {
             setLocked(false);
             setOpenSlot("championTeamId");
           }
-        }} disabled={immutableBet || blockedByClosedBets}>
+        }} disabled={immutableBet || blockedByClosedBets || !hasTeams}>
           <RotateCcw size={18} />
           {immutableBet ? "Aposta travada" : blockedByClosedBets ? "Encerrado" : "Editar"}
         </button>
-        <button className="live-primary-action live-gold-action" type="button" disabled={hasDuplicate || immutableBet || blockedByClosedBets || saving} onClick={confirmBet}>
+        <button className="live-primary-action live-gold-action" type="button" disabled={!canSubmit} onClick={requestConfirmation}>
           {saving ? "Salvando..." : "Confirmar aposta"}
         </button>
       </div>
@@ -228,13 +241,59 @@ export function ApostaClient({ bet, betsOpen, profileId, teams }: ApostaClientPr
         </div>
       )}
 
+      {confirmOpen && (
+        <div className="live-modal-backdrop" onClick={() => setConfirmOpen(false)} role="presentation">
+          <GlassCard
+            aria-labelledby="confirm-bet-title"
+            aria-modal="true"
+            className="live-team-modal live-confirm-modal"
+            onClick={(event) => event.stopPropagation()}
+            role="dialog"
+            tone="blue"
+          >
+            <div className="live-modal-head">
+              <div>
+                <span className="live-section-label">Confirmar</span>
+                <strong id="confirm-bet-title">Sua aposta</strong>
+              </div>
+              <button aria-label="Fechar confirmação" onClick={() => setConfirmOpen(false)} type="button">
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="live-confirm-list">
+              {(Object.keys(slotLabels) as Slot[]).map((slot) => {
+                const team = teams.find((entry) => entry.id === picks[slot]);
+                return (
+                  <div key={slot}>
+                    <span>{slotLabels[slot]}</span>
+                    <strong>{team?.name ?? "Não selecionado"}</strong>
+                  </div>
+                );
+              })}
+            </div>
+
+            <button className="live-primary-action live-gold-action" disabled={saving} onClick={submitConfirmedBet} type="button">
+              {saving ? "Salvando..." : "Salvar aposta"}
+            </button>
+          </GlassCard>
+        </div>
+      )}
+
       {openSlot && !locked && (
-        <div className="live-modal-backdrop" role="presentation">
-          <GlassCard className="live-team-modal" tone="blue">
+        <div className="live-modal-backdrop" onClick={() => setOpenSlot(null)} role="presentation">
+          <GlassCard
+            aria-labelledby="team-select-title"
+            aria-modal="true"
+            className="live-team-modal live-select-team-modal"
+            onClick={(event) => event.stopPropagation()}
+            role="dialog"
+            tone="blue"
+          >
             <div className="live-modal-head">
               <div>
                 <span className="live-section-label">Selecionar</span>
-                <strong>{slotLabels[openSlot]}</strong>
+                <strong id="team-select-title">{slotLabels[openSlot]}</strong>
               </div>
               <button aria-label="Fechar seleção" onClick={() => setOpenSlot(null)} type="button">
                 <X size={20} />
@@ -256,7 +315,7 @@ export function ApostaClient({ bet, betsOpen, profileId, teams }: ApostaClientPr
                     onClick={() => updatePick(openSlot, team.id)}
                     type="button"
                   >
-                    <span className="live-flag-orb">{flagByCode[team.externalId] ?? team.externalId.slice(0, 2)}</span>
+                    <TeamFlag label={team.name} src={team.flagUrl} />
                     <span>
                       <strong>{team.name}</strong>
                       <small>{selectedElsewhere ? "Já selecionado" : team.groupName}</small>
