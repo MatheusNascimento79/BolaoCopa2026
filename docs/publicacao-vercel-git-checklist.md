@@ -1,6 +1,6 @@
 # Publicacao Vercel + Git - Bolao Copa 2026
 
-Atualizado em: 2026-06-12 19:52:00 -03
+Atualizado em: 2026-06-13 09:49:44 -03
 
 ## Objetivo
 
@@ -27,7 +27,7 @@ Preparar o projeto para publicacao controlada em Git e Vercel, mantendo gates ex
 - [x] Configurar variaveis de ambiente:
   - `NEXT_PUBLIC_SUPABASE_URL`
   - `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
-- [ ] Configurar URL publica no Supabase Auth.
+- [x] Configurar URL publica no Supabase Auth.
 - [x] Fazer deploy de producao aprovado.
 - [x] Rodar smoke test na URL publica.
 
@@ -36,7 +36,8 @@ Preparar o projeto para publicacao controlada em Git e Vercel, mantendo gates ex
 - GitHub: `MatheusNascimento79/BolaoCopa2026`.
 - Vercel: `matheusnascimento79s-projects/bolao-copa-2026`.
 - URL publica: `https://bolao-copa-2026-two-alpha.vercel.app`.
-- Smoke test: `/`, `/auth` e `/cadastro` retornaram HTTP 200; sem logs runtime `error`/`fatal` no periodo verificado.
+- Supabase Auth: URL publica configurada manualmente pelo usuario em 2026-06-13.
+- Smoke test em 2026-06-13: `/auth` e `/cadastro` retornaram HTTP 200; `/` retornou HTTP 307 para `/login`, conforme protecao/redirect da rota inicial.
 - O frontend usa apenas chave publica/publishable do Supabase.
 - `service_role` ou secret key nao deve ser exposta em variaveis `NEXT_PUBLIC_`.
 - Deploy de producao depende de aprovacao explicita.
