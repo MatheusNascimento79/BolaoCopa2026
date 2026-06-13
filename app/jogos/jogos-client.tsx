@@ -1,9 +1,9 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { RefreshCw } from "lucide-react";
+import { RefreshCw, Search } from "lucide-react";
 import { AppFrame, GlassCard, LiveBottomNav, MatchCard, StageTabs, StatusBadge } from "@/components/live-ui";
-import type { Match, Team, TournamentStage } from "@/lib/domain/types";
+import type { Match, MatchStatus, Team, TournamentStage } from "@/lib/domain/types";
 import { stageLabels, stageOrder } from "@/lib/worldcup/stages";
 
 const validStages = new Set<TournamentStage>(stageOrder);
@@ -20,9 +20,20 @@ type MatchesPayload = {
   teams: Team[];
 };
 
+type StatusFilter = "todos" | "agendado" | "ao_vivo" | "encerrado";
+
+const statusFilters: Array<{ label: string; value: StatusFilter }> = [
+  { label: "Todos", value: "todos" },
+  { label: "Agendados", value: "agendado" },
+  { label: "Ao vivo", value: "ao_vivo" },
+  { label: "Encerrados", value: "encerrado" },
+];
+
 export function JogosClient({ activeStage, initialMatches, initialTeams }: JogosClientProps) {
   const [matches, setMatches] = useState(initialMatches);
   const [teams, setTeams] = useState(initialTeams);
+  const [countryQuery, setCountryQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("todos");
   const [refreshing, setRefreshing] = useState(false);
   const [statusText, setStatusText] = useState("Tabela sincronizada.");
   const teamMap = useMemo(() => new Map(teams.map((team) => [team.id, team])), [teams]);
@@ -33,7 +44,11 @@ export function JogosClient({ activeStage, initialMatches, initialTeams }: Jogos
     count: matchesByStage[stage].length,
     href: `/jogos?fase=${stage}`,
   }));
-  const visibleMatches = matchesByStage[activeStage] ?? [];
+  const stageMatches = useMemo(() => matchesByStage[activeStage] ?? [], [activeStage, matchesByStage]);
+  const visibleMatches = useMemo(
+    () => filterMatches(stageMatches, teamMap, countryQuery, statusFilter),
+    [countryQuery, stageMatches, statusFilter, teamMap],
+  );
   const liveMatches = visibleMatches.filter((match) => match.status === "ao_vivo");
   const spotlightMatch = liveMatches[0] ?? visibleMatches.find((match) => match.status === "agendado") ?? visibleMatches[0] ?? null;
   const groupedMatches = groupMatchesByDate(visibleMatches);
@@ -77,6 +92,29 @@ export function JogosClient({ activeStage, initialMatches, initialTeams }: Jogos
       <StageTabs tabs={stageTabs} activeId={activeStage} />
       <p className="live-phase-caption">{stageLabels[activeStage]} · {statusText}</p>
 
+      <GlassCard className="live-filter-card live-games-filter" tone="blue">
+        <label className="live-search-field">
+          <Search size={18} />
+          <input
+            placeholder="Filtrar por país"
+            value={countryQuery}
+            onChange={(event) => setCountryQuery(event.target.value)}
+          />
+        </label>
+        <div className="live-filter-pills" aria-label="Filtrar por status do jogo">
+          {statusFilters.map((filter) => (
+            <button
+              aria-pressed={statusFilter === filter.value}
+              key={filter.value}
+              onClick={() => setStatusFilter(filter.value)}
+              type="button"
+            >
+              {filter.label}
+            </button>
+          ))}
+        </div>
+      </GlassCard>
+
       {spotlightMatch && (
         <GlassCard className="live-live-card" tone="green">
           <div>
@@ -95,8 +133,8 @@ export function JogosClient({ activeStage, initialMatches, initialTeams }: Jogos
       <section className="live-stack" aria-label={`Jogos - ${stageLabels[activeStage]}`}>
         {visibleMatches.length === 0 && (
           <GlassCard className="live-empty-state" tone="blue">
-            <strong>Nenhum jogo nesta fase</strong>
-            <p>Assim que a tabela for atualizada, os jogos aparecem aqui.</p>
+            <strong>Nenhum jogo encontrado</strong>
+            <p>Ajuste o país, o status ou escolha outra fase.</p>
           </GlassCard>
         )}
 
@@ -119,7 +157,7 @@ export function JogosClient({ activeStage, initialMatches, initialTeams }: Jogos
                     group={match.groupName}
                     kickoffLabel={formatMatchTime(match.kickoffAt)}
                     venue={`${match.venue} · ${match.city}`}
-                    status={match.status === "encerrado" ? "done" : match.status === "ao_vivo" ? "live" : "scheduled"}
+                    status={getMatchCardStatus(match.status)}
                     home={{
                       name: homeTeam?.name ?? "A definir",
                       flagSrc: homeTeam?.flagUrl,
@@ -139,6 +177,39 @@ export function JogosClient({ activeStage, initialMatches, initialTeams }: Jogos
       </section>
     </AppFrame>
   );
+}
+
+function filterMatches(
+  matches: Match[],
+  teamMap: Map<string, Team>,
+  countryQuery: string,
+  statusFilter: StatusFilter,
+) {
+  const normalizedQuery = normalizeSearch(countryQuery);
+
+  return matches.filter((match) => {
+    const homeTeam = teamMap.get(match.homeTeamId);
+    const awayTeam = teamMap.get(match.awayTeamId);
+    const matchesCountry =
+      normalizedQuery.length === 0 ||
+      normalizeSearch(homeTeam?.name ?? "").includes(normalizedQuery) ||
+      normalizeSearch(awayTeam?.name ?? "").includes(normalizedQuery);
+    const matchesStatus = statusFilter === "todos" || match.status === statusFilter;
+
+    return matchesCountry && matchesStatus;
+  });
+}
+
+function normalizeSearch(value: string) {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
+}
+
+function getMatchCardStatus(status: MatchStatus) {
+  return status === "encerrado" ? "done" : status === "ao_vivo" ? "live" : "scheduled";
 }
 
 function groupMatchesByStage(matches: Match[]) {

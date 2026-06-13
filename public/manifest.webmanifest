@@ -1,0 +1,19 @@
+{
+  "name": "Bolão Copa 2026",
+  "short_name": "Bolão 2026",
+  "description": "Bolão mobile-first da Copa 2026.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#061033",
+  "theme_color": "#061033",
+  "icons": [
+    {
+      "src": "/assets/bau-bolao.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

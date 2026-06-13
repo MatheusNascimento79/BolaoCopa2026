@@ -68,7 +68,6 @@ export function TimesClient({ teams }: { teams: Team[] }) {
               <span>{team.stats.points} pts</span>
               <span>{team.stats.wins} vitórias</span>
               <span>{team.stats.goalDifference > 0 ? `+${team.stats.goalDifference}` : team.stats.goalDifference} SG</span>
-              <span>FIFA #{team.fifaRanking}</span>
             </div>
           </GlassCard>
         ))}

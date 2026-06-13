@@ -3150,3 +3150,165 @@ input {
   font-weight: var(--weight-body);
   line-height: 1.42;
 }
+
+/* Final mobile polish for games/teams. Keep this at the end to win over older duplicated rules. */
+.live-games-filter {
+  gap: 10px;
+}
+
+.live-live-card {
+  justify-content: center;
+  text-align: center;
+}
+
+.live-live-card > div,
+.live-live-card div {
+  justify-items: center;
+  width: 100%;
+}
+
+.live-live-card .live-pulse-badge,
+.live-live-card .live-status-badge {
+  justify-self: center;
+}
+
+.live-live-card strong {
+  max-width: 100%;
+  overflow: visible;
+  text-align: center;
+  text-overflow: clip;
+  white-space: normal;
+}
+
+.live-match-card {
+  overflow: visible;
+}
+
+.live-match-teams {
+  grid-template-columns: minmax(84px, 1fr) minmax(86px, 0.7fr) minmax(84px, 1fr);
+  gap: 6px;
+  align-items: start;
+}
+
+.live-team-score {
+  display: grid;
+  grid-template-rows: 58px minmax(38px, auto);
+  justify-items: center;
+  align-items: start;
+  min-width: 0;
+  text-align: center;
+}
+
+.live-team-left,
+.live-team-right {
+  justify-items: center;
+  text-align: center;
+}
+
+.live-team-score strong {
+  display: -webkit-box;
+  width: 100%;
+  min-height: 34px;
+  overflow: hidden;
+  color: #fff;
+  font-size: clamp(0.72rem, 3.2vw, 0.92rem);
+  font-weight: var(--weight-strong);
+  line-height: 1.08;
+  overflow-wrap: anywhere;
+  text-align: center;
+  text-overflow: clip;
+  white-space: normal;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.live-versus {
+  align-self: center;
+  min-width: 0;
+  padding-top: 12px;
+  position: relative;
+  z-index: 1;
+}
+
+.live-versus strong {
+  font-size: clamp(1.85rem, 9vw, 2.35rem);
+  line-height: 0.96;
+  white-space: nowrap;
+}
+
+.live-versus span {
+  max-width: 92px;
+  overflow-wrap: normal;
+  text-align: center;
+  white-space: normal;
+}
+
+.live-match-card .live-flag-orb {
+  width: 70px;
+  height: 48px;
+  overflow: visible;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+}
+
+.live-match-card .live-flag-image {
+  border-radius: 8px;
+  filter: drop-shadow(0 10px 14px rgba(0, 0, 0, 0.32));
+}
+
+.live-card-footnote {
+  text-align: center;
+}
+
+.live-team-summary {
+  display: grid;
+  justify-items: center;
+  text-align: center;
+}
+
+.live-team-summary > div {
+  display: grid;
+  justify-items: center;
+  gap: 3px;
+}
+
+.live-expanded-stats {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+@media (max-width: 380px) {
+  .live-match-card {
+    padding-right: 14px;
+    padding-left: 14px;
+  }
+
+  .live-match-teams {
+    grid-template-columns: minmax(76px, 1fr) minmax(78px, 0.65fr) minmax(76px, 1fr);
+    gap: 4px;
+  }
+
+  .live-match-card .live-flag-orb {
+    width: 62px;
+    height: 44px;
+  }
+
+  .live-versus span {
+    max-width: 78px;
+    font-size: 0.68rem;
+  }
+}
+
+@media (hover: none) and (pointer: coarse) {
+  html {
+    -webkit-text-size-adjust: 100%;
+    overscroll-behavior-y: none;
+  }
+
+  body {
+    -webkit-tap-highlight-color: transparent;
+    overscroll-behavior-y: none;
+    touch-action: manipulation;
+  }
+}
