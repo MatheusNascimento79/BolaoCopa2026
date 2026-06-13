@@ -21,6 +21,10 @@ type SignupError = {
   status?: number;
 };
 
+type SignupUser = {
+  identities?: unknown[] | null;
+};
+
 function getSignupErrorMessage(error?: SignupError | null) {
   const normalized = `${error?.code ?? ""} ${error?.message ?? ""}`.toLowerCase();
 
@@ -102,6 +106,15 @@ export function CadastroClient() {
       return;
     }
 
+    const user = data.user as SignupUser;
+
+    if (!data.session && Array.isArray(user.identities) && user.identities.length === 0) {
+      setMessage("Este e-mail já está cadastrado. Volte para entrar ou use outro e-mail.");
+      setMessageTone("success");
+      setStatus("idle");
+      return;
+    }
+
     if (!data.session) {
       const { error: signInError } = await supabase.auth.signInWithPassword({
         email: email.trim(),
@@ -109,8 +122,8 @@ export function CadastroClient() {
       });
 
       if (signInError) {
-        setMessage("Cadastro criado, mas a confirmação de e-mail ainda está ativa no Supabase.");
-        setMessageTone("error");
+        setMessage("Conta criada. Volte para entrar ou fale com o administrador se o acesso não liberar.");
+        setMessageTone("success");
         setStatus("idle");
         return;
       }
