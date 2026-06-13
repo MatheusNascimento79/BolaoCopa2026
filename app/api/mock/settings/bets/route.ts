@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getSettings, setBetsOpen } from "@/lib/app-data";
 
 export async function GET() {
-  return NextResponse.json(getSettings());
+  return NextResponse.json(await getSettings());
 }
 
 export async function PATCH(request: Request) {
@@ -12,5 +12,5 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ error: "invalid_bets_open_value" }, { status: 400 });
   }
 
-  return NextResponse.json(setBetsOpen(body.open, body.actorId));
+  return NextResponse.json(await setBetsOpen(body.open, body.actorId));
 }

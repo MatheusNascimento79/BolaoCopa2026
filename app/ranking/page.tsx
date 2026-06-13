@@ -1,167 +1,60 @@
-"use client";
+import { requireAppAccess } from "@/lib/access/profile";
+import { getPaymentSummary, listBets, listProfiles, listTeams } from "@/lib/app-data";
+import { bets, calculateRankingEntries, paymentSummary, profiles, type Bet, type Team } from "@/lib/mock";
+import { getWorldCupAdapter } from "@/lib/worldcup";
+import { RankingClient } from "./ranking-client";
 
-import { useMemo, useState } from "react";
-import { ArrowDown, ArrowUp, Minus, RefreshCw, Trophy } from "lucide-react";
-import { AppFrame, GlassCard, LiveBottomNav, RankingRow, StatusBadge } from "@/components/live-ui";
-import {
-  currentProfile,
-  paymentSummary,
-  rankingEntries as initialRankingEntries,
-} from "@/lib/mock";
-import type { RankingEntry } from "@/lib/mock";
+export const dynamic = "force-dynamic";
 
-const trendByUserId: Record<string, "up" | "down" | "same"> = {
-  "profile-current": "up",
-  "profile-luiz": "same",
-  "profile-nina": "up",
-};
-
-export default function RankingPage() {
-  const [rankingEntries, setRankingEntries] = useState(initialRankingEntries);
-  const [lastUpdatedAt, setLastUpdatedAt] = useState(initialRankingEntries[0]?.rankingSnapshotAt ?? new Date().toISOString());
-  const [refreshing, setRefreshing] = useState(false);
-  const [refreshStatus, setRefreshStatus] = useState("Base local sincronizada.");
-  const podium = rankingEntries.slice(0, 3);
-  const rankingWithMeta = useMemo(
-    () =>
-      rankingEntries.map((entry, index, entries) => {
-        const previous = entries[index - 1];
-        const next = entries[index + 1];
-        const tied =
-          previous?.probabilityScore === entry.probabilityScore ||
-          next?.probabilityScore === entry.probabilityScore;
-
-        return {
-          ...entry,
-          tied,
-          trend: trendByUserId[entry.userId] ?? "same",
-        };
-      }),
-    [rankingEntries],
-  );
-
-  async function refreshRanking() {
-    setRefreshing(true);
-    setRefreshStatus("Atualizando resultados...");
-
-    try {
-      const response = await fetch("/api/ranking/snapshot", { cache: "no-store" });
-      if (!response.ok) throw new Error("ranking_snapshot_failed");
-
-      const payload = (await response.json()) as {
-        entries: RankingEntry[];
-        snapshotAt: string;
-        source: string;
-      };
-
-      setRankingEntries(payload.entries);
-      setLastUpdatedAt(payload.snapshotAt);
-      setRefreshStatus(payload.source === "mock-local" ? "Recalculado com base local." : "Resultados sincronizados.");
-    } catch {
-      setRefreshStatus("Não foi possível atualizar agora.");
-    } finally {
-      setRefreshing(false);
-    }
+function normalizeBetTeamId(teamId: string, teamList: Team[], storedTeams: Team[]) {
+  const storedTeam = storedTeams.find((team) => team.id === teamId);
+  if (storedTeam) {
+    const providerTeam = teamList.find((team) => team.externalId.toUpperCase() === storedTeam.externalId.toUpperCase());
+    return providerTeam?.id ?? teamId;
   }
 
-  return (
-    <AppFrame
-      eyebrow="Classificação"
-      title="Ranking"
-      action={
-        <div className="live-ranking-actions">
-          <StatusBadge tone="warning">{paymentSummary.paidParticipants} pagos</StatusBadge>
-          <button className="live-refresh-action" disabled={refreshing} onClick={refreshRanking} type="button">
-            <RefreshCw size={15} />
-            Atualizar
-          </button>
-        </div>
-      }
-      nav={<LiveBottomNav current="/ranking" />}
-    >
-      <GlassCard className="live-podium-card" tone="gold">
-        <div className="live-podium-head">
-          <Trophy size={24} />
-          <div>
-            <strong>Top 3</strong>
-            <p>Probabilidade viva calculada com resultados sincronizados e força atual dos times.</p>
-          </div>
-        </div>
+  if (teamList.some((team) => team.id === teamId)) return teamId;
 
-        <div className="live-podium" aria-label="Pódio do ranking">
-          {podium.map((entry) => (
-            <div className={`live-podium-place live-podium-${entry.position}`} key={entry.id}>
-              <strong>{entry.position}º</strong>
-              <span>{entry.nickname}</span>
-              <small>{formatProbability(entry.probabilityScore)}</small>
-            </div>
-          ))}
-        </div>
+  const legacyCode = teamId.replace(/^team-/, "").toUpperCase();
+  const teamByCode = teamList.find((team) => team.externalId.toUpperCase() === legacyCode);
 
-        <p className="live-ranking-sync">
-          Atualizado em {formatDateTime(lastUpdatedAt)} · {refreshStatus}
-        </p>
-      </GlassCard>
-
-      <section className="live-stack" aria-label="Ranking geral">
-        <div className="live-section-row">
-          <span className="live-section-label">Geral</span>
-          <StatusBadge tone="scheduled">{rankingEntries.length} participantes</StatusBadge>
-        </div>
-
-        {rankingWithMeta.map((entry) => (
-          <div className="live-ranking-item" key={entry.id}>
-            <RankingRow
-              position={entry.position}
-              nickname={entry.nickname}
-              probability={formatProbabilityNumber(entry.probabilityScore)}
-              prizeLabel={entry.prizeLabel}
-              tierLabel={entry.tied ? "Empatado" : prizeTierLabel(entry.expectedTier)}
-              active={entry.userId === currentProfile.id}
-            />
-            <div className="live-ranking-meta">
-              <span>{entry.reasoningSummary}</span>
-              <TrendBadge trend={entry.trend} />
-            </div>
-          </div>
-        ))}
-      </section>
-    </AppFrame>
-  );
+  return teamByCode?.id ?? teamId;
 }
 
-function TrendBadge({ trend }: { trend: "up" | "down" | "same" }) {
-  const Icon = trend === "up" ? ArrowUp : trend === "down" ? ArrowDown : Minus;
-  const label = trend === "up" ? "Subiu" : trend === "down" ? "Caiu" : "Estável";
+function normalizeBetsForTeams(betList: Bet[], teamList: Team[], storedTeams: Team[]) {
+  return betList.map((bet) => ({
+    ...bet,
+    championTeamId: normalizeBetTeamId(bet.championTeamId, teamList, storedTeams),
+    runnerUpTeamId: normalizeBetTeamId(bet.runnerUpTeamId, teamList, storedTeams),
+    thirdPlaceTeamId: normalizeBetTeamId(bet.thirdPlaceTeamId, teamList, storedTeams),
+  }));
+}
+
+export default async function RankingPage() {
+  const profile = await requireAppAccess();
+  const adapter = getWorldCupAdapter();
+  const [teamsResult, storedBets, storedProfiles, storedTeams, storedPaymentSummary] = await Promise.all([
+    adapter.syncTeams(),
+    listBets(),
+    listProfiles(),
+    listTeams(),
+    getPaymentSummary(),
+  ]);
+  const realDataAvailable = storedBets.length > 0 && storedProfiles.length > 0;
+  const snapshotAt = new Date().toISOString();
+  const rankingEntries = calculateRankingEntries({
+    betList: normalizeBetsForTeams(realDataAvailable ? storedBets : bets, teamsResult.data, storedTeams),
+    profileList: realDataAvailable ? storedProfiles : profiles,
+    teamList: teamsResult.data,
+    totalPrizeCents: realDataAvailable ? storedPaymentSummary.totalRaisedCents : paymentSummary.totalRaisedCents,
+    snapshotAt,
+  });
 
   return (
-    <span className={`live-trend live-trend-${trend}`}>
-      <Icon size={15} />
-      {label}
-    </span>
+    <RankingClient
+      activeUserId={profile.id}
+      initialEntries={rankingEntries}
+      paidParticipants={realDataAvailable ? storedPaymentSummary.paid : paymentSummary.paidParticipants}
+    />
   );
-}
-
-function formatProbabilityNumber(value: number) {
-  return Number((value * 100).toFixed(2));
-}
-
-function formatProbability(value: number) {
-  const probability = formatProbabilityNumber(value);
-  return `${probability.toLocaleString("pt-BR", {
-    maximumFractionDigits: 2,
-    minimumFractionDigits: probability > 0 && probability < 1 ? 2 : 0,
-  })}%`;
-}
-
-function prizeTierLabel(tier: number) {
-  if (tier >= 1 && tier <= 7) return `Categoria ${tier}`;
-  return "Sem premiação";
-}
-
-function formatDateTime(value: string) {
-  return new Intl.DateTimeFormat("pt-BR", {
-    dateStyle: "short",
-    timeStyle: "short",
-  }).format(new Date(value));
 }

@@ -17,7 +17,7 @@ export async function PATCH(request: Request, { params }: RouteContext) {
   }
 
   try {
-    return NextResponse.json(decidePayment(receiptId, body.status, body.actorId));
+    return NextResponse.json(await decidePayment(receiptId, body.status, body.actorId));
   } catch (error) {
     const message = error instanceof Error ? error.message : "payment_decision_failed";
     const status = message === "receipt_not_found" ? 404 : 409;

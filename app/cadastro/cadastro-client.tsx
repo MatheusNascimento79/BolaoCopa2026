@@ -109,7 +109,7 @@ export function CadastroClient() {
     const user = data.user as SignupUser;
 
     if (!data.session && Array.isArray(user.identities) && user.identities.length === 0) {
-      setMessage("Este e-mail já está cadastrado. Volte para entrar ou use outro e-mail.");
+      setMessage("Este e-mail já está cadastrado. Entre para continuar seu cadastro.");
       setMessageTone("success");
       setStatus("idle");
       return;
@@ -122,20 +122,22 @@ export function CadastroClient() {
       });
 
       if (signInError) {
-        setMessage("Conta criada. Volte para entrar ou fale com o administrador se o acesso não liberar.");
+        setMessage("Conta criada. Confirme seu e-mail para continuar o pagamento.");
         setMessageTone("success");
         setStatus("idle");
         return;
       }
     }
 
-    const { error: profileError } = await supabase.from("profiles").insert({
+    const { error: profileError } = await supabase.from("profiles").upsert({
       email: email.trim(),
       full_name: fullName.trim(),
       id: data.user.id,
       nickname: nickname.trim(),
       payment_status: "pendente",
       role: "participant",
+    }, {
+      onConflict: "id",
     });
 
     if (profileError) {
@@ -146,7 +148,8 @@ export function CadastroClient() {
     }
 
     setStatus("done");
-    setStep(1);
+    router.refresh();
+    router.replace("/pagamento/upload");
   }
 
   return (

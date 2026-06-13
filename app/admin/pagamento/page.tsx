@@ -7,8 +7,7 @@ export const dynamic = "force-dynamic";
 export default async function AdminPagamentoPage() {
   await requireSuperAdmin();
 
-  const receipts = listPaymentReceipts();
-  const { settings } = getSettings();
+  const [receipts, { settings }] = await Promise.all([listPaymentReceipts(), getSettings()]);
 
   return <AdminPagamentoClient initialReceipts={receipts} entryAmountCents={settings.paymentAmountCents} />;
 }

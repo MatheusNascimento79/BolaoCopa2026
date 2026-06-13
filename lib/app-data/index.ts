@@ -1,2 +1,2 @@
-export * from "./mock-repository";
+export * from "./supabase-repository";
 export type * from "./types";

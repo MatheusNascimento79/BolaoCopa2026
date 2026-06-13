@@ -17,7 +17,7 @@ export async function POST(request: Request) {
 
   try {
     return NextResponse.json(
-      submitBet({
+      await submitBet({
         userId: body.userId,
         championTeamId: body.championTeamId,
         runnerUpTeamId: body.runnerUpTeamId,

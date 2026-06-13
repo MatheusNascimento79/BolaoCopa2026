@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 export default async function AdminFinalizarPage() {
   await requireSuperAdmin();
 
-  const { settings } = getSettings();
+  const { settings } = await getSettings();
 
   return <AdminFinalizarClient initialSettings={settings} />;
 }
