@@ -54,7 +54,7 @@ export function JogosClient({ activeStage, betsDeadlineAt, betsOpen, initialMatc
     [selectedTeamId, stageMatches, statusFilter],
   );
   const liveMatches = visibleMatches.filter((match) => match.status === "ao_vivo");
-  const spotlightMatch = liveMatches[0] ?? visibleMatches.find((match) => match.status === "agendado") ?? visibleMatches[0] ?? null;
+  const spotlightMatch = useMemo(() => selectSpotlightMatch(visibleMatches), [visibleMatches]);
   const groupedMatches = groupMatchesByDate(visibleMatches);
 
   const refreshMatches = useCallback(async () => {
@@ -240,6 +240,22 @@ function sortTeamsByName(teamList: Team[]) {
   return [...teamList].sort((teamA, teamB) => teamA.name.localeCompare(teamB.name, "pt-BR"));
 }
 
+function sortMatchesByKickoff(matchList: Match[]) {
+  return [...matchList].sort((matchA, matchB) => new Date(matchA.kickoffAt).getTime() - new Date(matchB.kickoffAt).getTime());
+}
+
+function selectSpotlightMatch(matchList: Match[]) {
+  const sortedMatches = sortMatchesByKickoff(matchList);
+  const liveMatch = sortedMatches.find((match) => match.status === "ao_vivo");
+  if (liveMatch) return liveMatch;
+
+  const now = Date.now();
+  const nextScheduledMatch = sortedMatches.find((match) => match.status === "agendado" && new Date(match.kickoffAt).getTime() >= now);
+  if (nextScheduledMatch) return nextScheduledMatch;
+
+  return sortedMatches.find((match) => match.status === "agendado") ?? sortedMatches[0] ?? null;
+}
+
 function getMatchCardStatus(status: MatchStatus) {
   return status === "encerrado" ? "done" : status === "ao_vivo" ? "live" : "scheduled";
 }
@@ -267,11 +283,22 @@ function groupMatchesByDate(matches: Match[]) {
     groups.set(dateKey, [...(groups.get(dateKey) ?? []), match]);
   });
 
-  return Array.from(groups.entries()).map(([dateKey, groupMatches]) => ({
-    dateKey,
-    label: formatMatchDate(groupMatches[0]?.kickoffAt ?? dateKey),
-    matches: groupMatches.sort((a, b) => new Date(a.kickoffAt).getTime() - new Date(b.kickoffAt).getTime()),
-  }));
+  return Array.from(groups.entries())
+    .map(([dateKey, groupMatches]) => {
+      const sortedMatches = sortMatchesByKickoff(groupMatches);
+
+      return {
+        dateKey,
+        label: formatMatchDate(sortedMatches[0]?.kickoffAt ?? dateKey),
+        matches: sortedMatches,
+      };
+    })
+    .sort((groupA, groupB) => {
+      const groupATime = new Date(groupA.matches[0]?.kickoffAt ?? groupA.dateKey).getTime();
+      const groupBTime = new Date(groupB.matches[0]?.kickoffAt ?? groupB.dateKey).getTime();
+
+      return groupATime - groupBTime;
+    });
 }
 
 function formatMatchDate(value: string) {
