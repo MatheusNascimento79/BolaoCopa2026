@@ -1,5 +1,5 @@
 import { requireAppAccessOrBettingGate } from "@/lib/access/betting-gate";
-import { getPaymentSummary, listBets, listProfiles, listTeams } from "@/lib/app-data";
+import { getPaymentSummary, listRankingBets, listRankingProfiles, listTeams } from "@/lib/app-data";
 import { calculateRankingEntries } from "@/lib/ranking/calculate";
 import { RankingClient } from "./ranking-client";
 
@@ -8,8 +8,8 @@ export const dynamic = "force-dynamic";
 export default async function RankingPage() {
   const { profile, settings } = await requireAppAccessOrBettingGate();
   const [storedBets, storedProfiles, storedTeams, storedPaymentSummary] = await Promise.all([
-    listBets(),
-    listProfiles(),
+    listRankingBets(),
+    listRankingProfiles(),
     listTeams(),
     getPaymentSummary(),
   ]);

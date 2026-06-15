@@ -53,6 +53,13 @@ type BetRow = {
   submitted_at: string;
 };
 
+type RankingProfileRow = {
+  id: string;
+  nickname: string;
+  role: "participant" | "super_admin";
+  payment_status: PaymentStatus;
+};
+
 type MatchRow = {
   id: string;
   external_id: string;
@@ -461,6 +468,31 @@ export async function listBets() {
 
   if (error) return [];
   return ((data ?? []) as BetRow[]).map(betFromRow);
+}
+
+export async function listRankingBets() {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("get_ranking_bets");
+
+  if (error || !Array.isArray(data)) return [];
+  return (data as BetRow[]).map(betFromRow);
+}
+
+export async function listRankingProfiles() {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("get_ranking_profiles");
+
+  if (error || !Array.isArray(data)) return [];
+
+  return (data as RankingProfileRow[]).map((row) => ({
+    id: row.id,
+    email: "",
+    fullName: row.nickname,
+    nickname: row.nickname,
+    role: row.role,
+    paymentStatus: row.payment_status,
+    createdAt: "",
+  }));
 }
 
 export async function submitBet(input: SubmitBetInput): Promise<SubmitBetResult> {

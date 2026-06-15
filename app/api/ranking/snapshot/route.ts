@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireAppAccess } from "@/lib/access/profile";
-import { getPaymentSummary, listBets, listProfiles, listTeams } from "@/lib/app-data";
+import { getPaymentSummary, listRankingBets, listRankingProfiles, listTeams } from "@/lib/app-data";
 import { calculateRankingEntries } from "@/lib/ranking/calculate";
 
 export async function GET() {
@@ -8,8 +8,8 @@ export async function GET() {
 
   const snapshotAt = new Date().toISOString();
   const [storedBets, storedProfiles, teamList, storedPaymentSummary] = await Promise.all([
-    listBets(),
-    listProfiles(),
+    listRankingBets(),
+    listRankingProfiles(),
     listTeams(),
     getPaymentSummary(),
   ]);
