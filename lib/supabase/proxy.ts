@@ -2,6 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 const PUBLIC_PATHS = ["/login", "/auth", "/cadastro", "/participar"];
+const PUBLIC_GET_API_PATHS = ["/api/matches", "/api/teams", "/api/settings/bets"];
 
 export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({ request });
@@ -28,8 +29,10 @@ export async function updateSession(request: NextRequest) {
   const { data } = await supabase.auth.getClaims();
   const claims = data?.claims;
   const isPublic = PUBLIC_PATHS.some((path) => request.nextUrl.pathname.startsWith(path));
+  const isPublicGetApi =
+    request.method === "GET" && PUBLIC_GET_API_PATHS.some((path) => request.nextUrl.pathname === path);
 
-  if (!claims && !isPublic) {
+  if (!claims && !isPublic && !isPublicGetApi) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     return NextResponse.redirect(url);
