@@ -1,7 +1,6 @@
 import { requireAppAccessOrBettingGate } from "@/lib/access/betting-gate";
 import { getWorldCupSnapshotAt, listMatches, listTeams } from "@/lib/app-data";
 import type { TournamentStage } from "@/lib/domain/types";
-import { getLiveWorldCupSnapshot } from "@/lib/worldcup/live-data";
 import { stageOrder } from "@/lib/worldcup/stages";
 import { JogosClient } from "./jogos-client";
 
@@ -24,7 +23,6 @@ export default async function JogosPage({ searchParams }: JogosPageProps) {
     searchParams,
     getWorldCupSnapshotAt(),
   ]);
-  const snapshot = await getLiveWorldCupSnapshot({ dbMatches: matches, dbTeams: teams, fallbackSnapshotAt });
   const requestedStage = params?.fase as TournamentStage | undefined;
   const activeStage = requestedStage && validStages.has(requestedStage) ? requestedStage : "fase_de_grupos";
 
@@ -33,10 +31,10 @@ export default async function JogosPage({ searchParams }: JogosPageProps) {
       activeStage={activeStage}
       betsDeadlineAt={settings.betsDeadlineAt}
       betsOpen={settings.betsOpen}
-      initialMatches={snapshot.matches}
-      initialSnapshotAt={snapshot.snapshotAt}
-      initialSource={snapshot.dataSource}
-      initialTeams={snapshot.teams}
+      initialMatches={matches}
+      initialSnapshotAt={fallbackSnapshotAt ?? new Date().toISOString()}
+      initialSource="snapshot"
+      initialTeams={teams}
     />
   );
 }

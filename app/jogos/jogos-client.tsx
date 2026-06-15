@@ -4,7 +4,6 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { RefreshCw, Search } from "lucide-react";
 import { AppFrame, BettingStatusBar, GlassCard, LiveBottomNav, MatchCard, StageTabs, StatusBadge } from "@/components/live-ui";
 import type { Match, MatchStatus, Team, TournamentStage } from "@/lib/domain/types";
-import { createClient } from "@/lib/supabase/client";
 import { stageLabels, stageOrder } from "@/lib/worldcup/stages";
 
 const validStages = new Set<TournamentStage>(stageOrder);
@@ -93,34 +92,6 @@ export function JogosClient({
     setTeams(initialTeams);
     setStatusText(formatSyncStatus(initialSource, initialSnapshotAt));
   }, [initialMatches, initialSnapshotAt, initialSource, initialTeams]);
-
-  useEffect(() => {
-    void refreshMatches();
-  }, [refreshMatches]);
-
-  useEffect(() => {
-    const refreshOnFocus = () => void refreshMatches();
-    window.addEventListener("focus", refreshOnFocus);
-    document.addEventListener("visibilitychange", refreshOnFocus);
-
-    return () => {
-      window.removeEventListener("focus", refreshOnFocus);
-      document.removeEventListener("visibilitychange", refreshOnFocus);
-    };
-  }, [refreshMatches]);
-
-  useEffect(() => {
-    const supabase = createClient();
-    const channel = supabase
-      .channel("live-matches-teams")
-      .on("postgres_changes", { event: "*", schema: "public", table: "matches" }, () => void refreshMatches())
-      .on("postgres_changes", { event: "*", schema: "public", table: "teams" }, () => void refreshMatches())
-      .subscribe();
-
-    return () => {
-      void supabase.removeChannel(channel);
-    };
-  }, [refreshMatches]);
 
   return (
     <AppFrame

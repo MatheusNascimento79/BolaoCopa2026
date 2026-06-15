@@ -4,7 +4,6 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { RefreshCw, Search, ShieldCheck } from "lucide-react";
 import { AppFrame, BettingStatusBar, GlassCard, LiveBottomNav, StatusBadge, TeamFlag } from "@/components/live-ui";
 import type { Team } from "@/lib/domain/types";
-import { createClient } from "@/lib/supabase/client";
 
 type TeamsPayload = {
   dataSource: "live" | "snapshot";
@@ -61,28 +60,6 @@ export function TimesClient({
     setTeams(initialTeams);
     setStatusText(formatSyncStatus(initialSource, initialSnapshotAt));
   }, [initialSnapshotAt, initialSource, initialTeams]);
-
-  useEffect(() => {
-    void refreshTeams();
-  }, [refreshTeams]);
-
-  useEffect(() => {
-    const refreshOnFocus = () => void refreshTeams();
-    window.addEventListener("focus", refreshOnFocus);
-    document.addEventListener("visibilitychange", refreshOnFocus);
-
-    const supabase = createClient();
-    const channel = supabase
-      .channel("live-teams")
-      .on("postgres_changes", { event: "*", schema: "public", table: "teams" }, () => void refreshTeams())
-      .subscribe();
-
-    return () => {
-      window.removeEventListener("focus", refreshOnFocus);
-      document.removeEventListener("visibilitychange", refreshOnFocus);
-      void supabase.removeChannel(channel);
-    };
-  }, [refreshTeams]);
 
   return (
     <AppFrame
