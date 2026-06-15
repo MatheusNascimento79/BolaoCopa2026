@@ -14,10 +14,14 @@ type JogosClientProps = {
   betsDeadlineAt: string | null;
   betsOpen: boolean;
   initialMatches: Match[];
+  initialSnapshotAt: string;
+  initialSource: "live" | "snapshot";
   initialTeams: Team[];
 };
 
 type MatchesPayload = {
+  dataSource: "live" | "snapshot";
+  fallbackReason: string | null;
   matches: Match[];
   snapshotAt: string;
   teams: Team[];
@@ -32,13 +36,21 @@ const statusFilters: Array<{ label: string; value: StatusFilter }> = [
   { label: "Encerrados", value: "encerrado" },
 ];
 
-export function JogosClient({ activeStage, betsDeadlineAt, betsOpen, initialMatches, initialTeams }: JogosClientProps) {
+export function JogosClient({
+  activeStage,
+  betsDeadlineAt,
+  betsOpen,
+  initialMatches,
+  initialSnapshotAt,
+  initialSource,
+  initialTeams,
+}: JogosClientProps) {
   const [matches, setMatches] = useState(initialMatches);
   const [teams, setTeams] = useState(initialTeams);
   const [selectedTeamId, setSelectedTeamId] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("todos");
   const [refreshing, setRefreshing] = useState(false);
-  const [statusText, setStatusText] = useState("Tabela sincronizada.");
+  const [statusText, setStatusText] = useState(formatSyncStatus(initialSource, initialSnapshotAt));
   const teamMap = useMemo(() => new Map(teams.map((team) => [team.id, team])), [teams]);
   const matchesByStage = useMemo(() => groupMatchesByStage(matches), [matches]);
   const stageTabs = stageOrder.map((stage) => ({
@@ -68,7 +80,7 @@ export function JogosClient({ activeStage, betsDeadlineAt, betsOpen, initialMatc
       const payload = (await response.json()) as MatchesPayload;
       setMatches(payload.matches);
       setTeams(payload.teams);
-      setStatusText(`Atualizado em ${formatTime(payload.snapshotAt)}.`);
+      setStatusText(formatSyncStatus(payload.dataSource, payload.snapshotAt));
     } catch {
       setStatusText("Não foi possível atualizar agora.");
     } finally {
@@ -79,7 +91,8 @@ export function JogosClient({ activeStage, betsDeadlineAt, betsOpen, initialMatc
   useEffect(() => {
     setMatches(initialMatches);
     setTeams(initialTeams);
-  }, [initialMatches, initialTeams]);
+    setStatusText(formatSyncStatus(initialSource, initialSnapshotAt));
+  }, [initialMatches, initialSnapshotAt, initialSource, initialTeams]);
 
   useEffect(() => {
     void refreshMatches();
@@ -334,6 +347,11 @@ function formatTime(value: string) {
     minute: "2-digit",
     timeZone: "America/Sao_Paulo",
   }).format(new Date(value));
+}
+
+function formatSyncStatus(dataSource: "live" | "snapshot", snapshotAt: string) {
+  const label = dataSource === "live" ? "API atualizada" : "Usando último snapshot salvo";
+  return `${label} em ${formatTime(snapshotAt)}.`;
 }
 
 function matchTeamsLabel(homeTeamId: string, awayTeamId: string, teamMap: Map<string, Team>) {

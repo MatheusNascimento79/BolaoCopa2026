@@ -7,6 +7,8 @@ import type { Team } from "@/lib/domain/types";
 import { createClient } from "@/lib/supabase/client";
 
 type TeamsPayload = {
+  dataSource: "live" | "snapshot";
+  fallbackReason: string | null;
   snapshotAt: string;
   teams: Team[];
 };
@@ -14,17 +16,21 @@ type TeamsPayload = {
 export function TimesClient({
   betsDeadlineAt,
   betsOpen,
+  initialSnapshotAt,
+  initialSource,
   teams: initialTeams,
 }: {
   betsDeadlineAt: string | null;
   betsOpen: boolean;
+  initialSnapshotAt: string;
+  initialSource: "live" | "snapshot";
   teams: Team[];
 }) {
   const [teams, setTeams] = useState(initialTeams);
   const [selectedTeamId, setSelectedTeamId] = useState("");
   const [group, setGroup] = useState("Todos");
   const [refreshing, setRefreshing] = useState(false);
-  const [statusText, setStatusText] = useState("Dados sincronizados.");
+  const [statusText, setStatusText] = useState(formatSyncStatus(initialSource, initialSnapshotAt));
   const groups = useMemo(() => ["Todos", ...Array.from(new Set(teams.map((team) => team.groupName)))], [teams]);
   const teamOptions = useMemo(() => sortTeamsByName(teams), [teams]);
   const filtered = teams.filter((team) => {
@@ -43,7 +49,7 @@ export function TimesClient({
 
       const payload = (await response.json()) as TeamsPayload;
       setTeams(payload.teams);
-      setStatusText(`Atualizado em ${formatTime(payload.snapshotAt)}.`);
+      setStatusText(formatSyncStatus(payload.dataSource, payload.snapshotAt));
     } catch {
       setStatusText("Não foi possível atualizar agora.");
     } finally {
@@ -53,7 +59,8 @@ export function TimesClient({
 
   useEffect(() => {
     setTeams(initialTeams);
-  }, [initialTeams]);
+    setStatusText(formatSyncStatus(initialSource, initialSnapshotAt));
+  }, [initialSnapshotAt, initialSource, initialTeams]);
 
   useEffect(() => {
     void refreshTeams();
@@ -175,4 +182,9 @@ function formatTime(value: string) {
     minute: "2-digit",
     timeZone: "America/Sao_Paulo",
   }).format(new Date(value));
+}
+
+function formatSyncStatus(dataSource: "live" | "snapshot", snapshotAt: string) {
+  const label = dataSource === "live" ? "API atualizada" : "Usando último snapshot salvo";
+  return `${label} em ${formatTime(snapshotAt)}.`;
 }

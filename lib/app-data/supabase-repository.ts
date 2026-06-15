@@ -267,6 +267,20 @@ export async function listMatches() {
   return ((data ?? []) as MatchRow[]).map(matchFromRow);
 }
 
+export async function getWorldCupSnapshotAt() {
+  const supabase = await createClient();
+  const [{ data: matchRows }, { data: teamRows }] = await Promise.all([
+    supabase.from("matches").select("updated_at").order("updated_at", { ascending: false }).limit(1),
+    supabase.from("teams").select("updated_at").order("updated_at", { ascending: false }).limit(1),
+  ]);
+  const values = [...(matchRows ?? []), ...(teamRows ?? [])]
+    .map((row) => ("updated_at" in row ? String(row.updated_at) : ""))
+    .filter(Boolean)
+    .sort((left, right) => new Date(right).getTime() - new Date(left).getTime());
+
+  return values[0] ?? null;
+}
+
 export async function listParticipantStatuses(): Promise<ParticipantStatus[]> {
   const supabase = await createClient();
   const { data, error } = await supabase.rpc("get_participant_statuses");
