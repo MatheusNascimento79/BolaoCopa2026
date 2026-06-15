@@ -64,7 +64,7 @@ export function AdminPagamentoClient({ initialReceipts, entryAmountCents }: Admi
 
     try {
       const response = await fetch(`/api/payments/${receiptId}`, {
-        body: JSON.stringify({ actorId: "profile-admin", status }),
+        body: JSON.stringify({ status }),
         headers: { "Content-Type": "application/json" },
         method: "PATCH",
       });
