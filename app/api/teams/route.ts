@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
-import { getWorldCupSnapshotAt, listTeams } from "@/lib/app-data";
+import { getWorldCupSnapshotAt, listMatches, listTeams } from "@/lib/app-data";
 import { getLiveWorldCupSnapshot } from "@/lib/worldcup/live-data";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  const [teams, fallbackSnapshotAt] = await Promise.all([listTeams(), getWorldCupSnapshotAt()]);
-  const snapshot = await getLiveWorldCupSnapshot({ dbTeams: teams, fallbackSnapshotAt });
+  const [matches, teams, fallbackSnapshotAt] = await Promise.all([listMatches(), listTeams(), getWorldCupSnapshotAt()]);
+  const snapshot = await getLiveWorldCupSnapshot({ dbMatches: matches, dbTeams: teams, fallbackSnapshotAt });
 
   return NextResponse.json({
     dataSource: snapshot.dataSource,
