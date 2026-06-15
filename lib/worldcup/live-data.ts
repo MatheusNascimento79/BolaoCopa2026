@@ -41,6 +41,15 @@ export async function getLiveWorldCupSnapshot({
       adapter.syncTeams(),
       dbMatches.length > 0 ? adapter.syncMatches() : Promise.resolve(null),
     ]);
+
+    if (dbTeams.length > 0 && teamsResult.data.length === 0) {
+      throw new Error("worldcup_sync_empty_teams");
+    }
+
+    if (matchesResult && dbMatches.length > 0 && matchesResult.data.length === 0) {
+      throw new Error("worldcup_sync_empty_matches");
+    }
+
     const teams = mergeLiveTeams(dbTeams, teamsResult.data);
     const matches = matchesResult ? mergeLiveMatches(dbMatches, dbTeams, teamsResult.data, matchesResult.data) : dbMatches;
     const snapshotAt = matchesResult?.syncedAt ?? teamsResult.syncedAt;
