@@ -128,6 +128,10 @@ function matchTeamsKey(homeTeamId: string, awayTeamId: string) {
   return `${homeTeamId}:${awayTeamId}`;
 }
 
+function isUuid(value: string) {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
+}
+
 async function persistLiveSnapshot({ matches, teams }: { matches: Match[]; teams: Team[] }) {
   const supabase = createAdminClient();
   if (!supabase) return "service_role_not_configured";
@@ -148,24 +152,26 @@ async function persistLiveSnapshot({ matches, teams }: { matches: Match[]; teams
     },
   }));
 
-  const matchRows = matches.map((match) => ({
-    id: match.id,
-    external_id: match.externalId,
-    stage: match.stage,
-    group_name: match.groupName ?? null,
-    home_team_id: match.homeTeamId,
-    away_team_id: match.awayTeamId,
-    home_score: match.homeScore,
-    away_score: match.awayScore,
-    status: match.status,
-    kickoff_at: match.kickoffAt,
-    venue: match.venue,
-    city: match.city,
-    raw_payload: {
-      source: "worldcup2026",
-      syncedAt: new Date().toISOString(),
-    },
-  }));
+  const matchRows = matches
+    .filter((match) => isUuid(match.id))
+    .map((match) => ({
+      id: match.id,
+      external_id: match.externalId,
+      stage: match.stage,
+      group_name: match.groupName ?? null,
+      home_team_id: match.homeTeamId,
+      away_team_id: match.awayTeamId,
+      home_score: match.homeScore,
+      away_score: match.awayScore,
+      status: match.status,
+      kickoff_at: match.kickoffAt,
+      venue: match.venue,
+      city: match.city,
+      raw_payload: {
+        source: "worldcup2026",
+        syncedAt: new Date().toISOString(),
+      },
+    }));
 
   const { error: teamsError } = await supabase.from("teams").upsert(teamRows, { onConflict: "id" });
   if (teamsError) return `worldcup_teams_persist_failed:${teamsError.message}`;
