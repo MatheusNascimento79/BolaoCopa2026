@@ -118,9 +118,15 @@ export function JogosClient({ activeStage, betsDeadlineAt, betsOpen, initialMatc
           <StatusBadge tone={liveMatches.length > 0 ? "live" : "scheduled"} className={liveMatches.length > 0 ? "live-pulse-badge" : ""}>
             {liveMatches.length > 0 ? "AO VIVO" : "Agenda"}
           </StatusBadge>
-          <button className="live-refresh-action" disabled={refreshing} onClick={refreshMatches} type="button">
-            <RefreshCw size={15} />
-            Atualizar
+          <button
+            aria-busy={refreshing}
+            className={`live-refresh-action${refreshing ? " is-refreshing" : ""}`}
+            disabled={refreshing}
+            onClick={refreshMatches}
+            type="button"
+          >
+            <RefreshCw aria-hidden="true" className="live-refresh-icon" size={15} />
+            {refreshing ? "Atualizando..." : "Atualizar"}
           </button>
         </div>
       }

@@ -84,9 +84,15 @@ export function TimesClient({
       action={
         <div className="live-ranking-actions">
           <StatusBadge tone="scheduled">{filtered.length} times</StatusBadge>
-          <button className="live-refresh-action" disabled={refreshing} onClick={() => void refreshTeams()} type="button">
-            <RefreshCw size={15} />
-            Atualizar
+          <button
+            aria-busy={refreshing}
+            className={`live-refresh-action${refreshing ? " is-refreshing" : ""}`}
+            disabled={refreshing}
+            onClick={() => void refreshTeams()}
+            type="button"
+          >
+            <RefreshCw aria-hidden="true" className="live-refresh-icon" size={15} />
+            {refreshing ? "Atualizando..." : "Atualizar"}
           </button>
         </div>
       }

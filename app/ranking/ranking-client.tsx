@@ -71,9 +71,15 @@ export function RankingClient({ activeUserId, betsDeadlineAt, betsOpen, initialE
       action={
         <div className="live-ranking-actions">
           <StatusBadge tone="warning">{paidParticipants} pagos</StatusBadge>
-          <button className="live-refresh-action" disabled={refreshing} onClick={refreshRanking} type="button">
-            <RefreshCw size={15} />
-            Atualizar
+          <button
+            aria-busy={refreshing}
+            className={`live-refresh-action${refreshing ? " is-refreshing" : ""}`}
+            disabled={refreshing}
+            onClick={refreshRanking}
+            type="button"
+          >
+            <RefreshCw aria-hidden="true" className="live-refresh-icon" size={15} />
+            {refreshing ? "Atualizando..." : "Atualizar"}
           </button>
         </div>
       }
