@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { CreditCard, ShieldCheck, ToggleRight } from "lucide-react";
+import { ClipboardList, CreditCard, ShieldCheck, ToggleRight } from "lucide-react";
 import { AppFrame, GlassCard, StatusBadge } from "@/components/live-ui";
 import { LogoutLink } from "@/components/logout-link";
 import { requireSuperAdmin } from "@/lib/access/profile";
@@ -31,6 +31,13 @@ export default async function AdminPage() {
           <span>
             <strong>Apostas</strong>
             <small>Abrir ou fechar rodada</small>
+          </span>
+        </Link>
+        <Link href="/admin/apostas">
+          <ClipboardList size={22} />
+          <span>
+            <strong>Auditoria das Apostas</strong>
+            <small>Conferir palpites e exportar lista</small>
           </span>
         </Link>
         <LogoutLink />

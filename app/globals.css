@@ -2486,6 +2486,48 @@ input {
   color: var(--gold);
 }
 
+.live-export-action {
+  width: 100%;
+  margin-top: 2px;
+}
+
+.live-bet-audit-row {
+  gap: 14px;
+}
+
+.live-bet-audit-picks {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: 8px;
+  margin: 0;
+}
+
+.live-bet-audit-picks div {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid rgba(255, 215, 95, 0.16);
+  border-radius: 14px;
+  background: rgba(3, 17, 59, 0.36);
+}
+
+.live-bet-audit-picks dt {
+  color: var(--gold);
+  font-size: 0.68rem;
+  font-weight: 760;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.live-bet-audit-picks dd {
+  margin: 0;
+  color: #fff;
+  font-size: var(--type-body);
+  font-weight: var(--weight-strong);
+  overflow-wrap: anywhere;
+}
+
 .live-back-action {
   justify-self: start;
   display: inline-flex;

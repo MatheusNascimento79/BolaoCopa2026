@@ -1,5 +1,17 @@
 import type { AppSettings, Bet, PaymentReceipt, Profile } from "@/lib/domain/types";
 
+export type BetAuditEntry = {
+  id: string;
+  userId: string;
+  fullName: string;
+  nickname: string;
+  email: string;
+  champion: string;
+  runnerUp: string;
+  thirdPlace: string;
+  submittedAt: string;
+};
+
 export type PaymentReceiptWithProfile = PaymentReceipt & {
   profile: Pick<Profile, "fullName" | "nickname"> | null;
 };

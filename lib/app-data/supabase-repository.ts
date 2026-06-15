@@ -13,6 +13,7 @@ import type {
 } from "@/lib/domain/types";
 import { isBetsDeadlineExpired } from "@/lib/betting/status";
 import type {
+  BetAuditEntry,
   BetsOpenResult,
   PaymentDecision,
   PaymentDecisionResult,
@@ -482,6 +483,32 @@ export async function listBets() {
 
   if (error) return [];
   return ((data ?? []) as BetRow[]).map(betFromRow);
+}
+
+export async function listBetAuditEntries(): Promise<BetAuditEntry[]> {
+  const [bets, profiles, teams] = await Promise.all([listBets(), listProfiles(), listTeams()]);
+  const profileById = new Map(profiles.map((profile) => [profile.id, profile]));
+  const teamById = new Map(teams.map((team) => [team.id, team]));
+
+  return bets
+    .map((bet) => {
+      const profile = profileById.get(bet.userId);
+      if (!profile) return null;
+
+      return {
+        id: bet.id,
+        userId: bet.userId,
+        fullName: profile.fullName,
+        nickname: profile.nickname,
+        email: profile.email,
+        champion: teamById.get(bet.championTeamId)?.name ?? "Não encontrado",
+        runnerUp: teamById.get(bet.runnerUpTeamId)?.name ?? "Não encontrado",
+        thirdPlace: teamById.get(bet.thirdPlaceTeamId)?.name ?? "Não encontrado",
+        submittedAt: bet.submittedAt,
+      };
+    })
+    .filter((entry): entry is BetAuditEntry => Boolean(entry))
+    .sort((left, right) => left.nickname.localeCompare(right.nickname, "pt-BR"));
 }
 
 export async function listRankingBets() {
